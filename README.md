@@ -4,7 +4,7 @@ Data Viz group project on Higher Education.
 ## Names | Emails
 - Ariel (Zhirui) Luo | 
 - Arielle Herman | a.herman@columbia.edu
-- Connie (Ye) Xu | 
+- Connie (Ye) Xu | yx2625@columbia.edu
 - Grace (Xuejing) Li | 
 
 ## Potential Datasets
