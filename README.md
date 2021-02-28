@@ -10,3 +10,6 @@ Data Viz group project on Higher Education.
 ## Potential Datasets
 1. [College Data Set](https://collegescorecard.ed.gov/)
 2. 
+
+## Other Links
+1. [Google Drive](https://drive.google.com/drive/u/1/folders/1Mui6K1F9hWZ4vZd3yePADfEjXkRGUTa6)
