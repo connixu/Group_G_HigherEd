@@ -8,4 +8,5 @@ Data Viz group project on Higher Education.
 - Grace (Xuejing) Li | xl2673@columbia.edu
 
 ## Potential Datasets
-1. 
+1. [College Data Set](https://collegescorecard.ed.gov/)
+2. 
