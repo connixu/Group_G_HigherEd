@@ -1,5 +1,5 @@
 # Final Project Proposal
-Name of Project:
+Name of Project: Group G Higher Education
 
 # Introduction
 A little on the background of the project.
