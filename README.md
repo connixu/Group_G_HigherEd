@@ -7,6 +7,11 @@ Data Viz group project on Higher Education.
 - Connie (Ye) Xu | yx2625@columbia.edu
 - Grace (Xuejing) Li | xl2673@columbia.edu
 
-## Potential Datasets
+## Important Links
+### Potential Datasets
 1. [College Data Set](https://collegescorecard.ed.gov/)
-2. 
+
+### [Googledrive](https://drive.google.com/drive/u/1/folders/1Mui6K1F9hWZ4vZd3yePADfEjXkRGUTa6)
+
+### [Proposal](https://github.com/QMSS-G5063-2021/Group_G_HigherEd/tree/main/proposal)
+
