@@ -2,7 +2,7 @@
 Name of Project: Group G Higher Education
 
 # Introduction
-A little on the background of the project.
+Our project seeks to examine higher education institutions within the United States. Our plan is to map and plot key elements of higher ed institution characteristics using the NCES College Scorecard. 
 
 # Project Rationale
 Explain the purpose and the goal of the project, and what kinds of skills we will be able to demonstrate (such as what kinds of maps or graphs do we hope to make).
