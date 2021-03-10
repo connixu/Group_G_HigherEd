@@ -34,4 +34,4 @@ We are hoping on a technical level to implement many of the things we learned in
 - For Prof. Brambor (also Nico and Yifei) - we are curious as to whether you have any other ideas of things that we should do with this data set, and whether there are other resources (packages on R, datasets, etc.) that you immediately can think of that can make our visualizations more interesting. 
 
 # Relevant Links
-Maybe include the links of our datasets or any sources that we cite.
+To better understand some of the columns of our dataset, please refer to Data Dictionary at:Source: https://collegescorecard.ed.gov/data
