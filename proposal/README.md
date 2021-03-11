@@ -7,7 +7,7 @@ Our project seeks to examine higher education institutions within the United Sta
 # Project Rationale
 The goal of the project is to look at the distribution and characteristics of higher-ed institutions across the US, and to identify some trends in terms of where 
 the 'more exclusive' and 'better' schools are, as well as how these types of schools affect the economic outcomes of the student (for example, the amount of student
-debt burden, the placement rate, etc.) To this point, the following are a few visualizations we are considering: 
+debt burden, the placement rate, etc.) We were also interested in using census data to compare the demographics of institutions to the surrounding areas. To this point, the following are a few visualizations we are considering: 
 
 - Mapping Excercise - we want to include an interactive map showing 2019 accredited universities across the US. We would consider color grouping these by category (e.g., Community College, Public University, Private Non-Profit, and Private For-Profit) and by size (enrollment in 2019). 
 - Scatterplots - while this plotting method is quite basic, we can use scatterplots to glean insights around (for example) if schools requiring higher ACT scores (composite, maths, verbal) would tend to have higher placement rates or higher student debt. 
