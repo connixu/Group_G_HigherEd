@@ -10,6 +10,7 @@ Data Viz group project on Higher Education.
 ## Important Links
 ### Potential Datasets
 1. [College Data Set](https://collegescorecard.ed.gov/)
+2. [Visualization Census Data](https://www.census.gov/topics/education/visualizations.html)
 
 ### [Googledrive](https://drive.google.com/drive/u/1/folders/1Mui6K1F9hWZ4vZd3yePADfEjXkRGUTa6)
 
