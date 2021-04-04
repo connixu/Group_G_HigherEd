@@ -1,0 +1,43 @@
+---
+title: "Exploratory Visuals"
+author: Arielle Herman
+date: 2021-04-04
+always_allow_html: yes
+output: 
+  html_document:
+    keep_md: true
+---
+
+```{r setup}
+rm(list=ls())
+knitr::opts_chunk$set(echo = TRUE)
+
+# Load packages.
+packages <- c("devtools","knitr","tidyverse","ggthemes", "ggmap", "educationdata")
+
+packages <- lapply(packages, FUN = function(x) {
+  if(!require(x, character.only = TRUE)) {
+    install.packages(x)
+  library(x, character.only = TRUE)
+  }
+}
+)
+library(educationdata)
+# https://github.com/UrbanInstitute/education-data-package-r
+```
+
+```{r cache=TRUE}
+filepath <- "../data/educationdata/ipedsOutcomes2017.csv"
+
+# if file exists, don't make it again cuz it takes a real long time
+if(file.exists(filepath)) {
+  ipeds17 <- read_csv(filepath)
+} else {
+  ipeds17 <- get_education_data(level = 'college-university', source = 'ipeds', 
+                                topic = 'outcome-measures', filters = list(year = 2017),
+                                add_labels = TRUE)
+  write.csv(ipeds17, filepath, row.names = FALSE)
+}
+
+ipeds17
+```
