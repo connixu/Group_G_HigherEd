@@ -13,7 +13,8 @@ rm(list=ls())
 knitr::opts_chunk$set(echo = TRUE)
 
 # Load packages.
-packages <- c("devtools","knitr","tidyverse","ggthemes", "ggmap", "educationdata")
+packages <- c("devtools","knitr","tidyverse","ggthemes", "ggmap", "educationdata",
+              "spData")
 
 packages <- lapply(packages, FUN = function(x) {
   if(!require(x, character.only = TRUE)) {
@@ -23,13 +24,18 @@ packages <- lapply(packages, FUN = function(x) {
 }
 )
 library(educationdata)
+library(spData)
+library(urbnmapr)
+library(readxl)
+library(httr)
+
 # https://github.com/UrbanInstitute/education-data-package-r
 ```
 
-```{r cache=TRUE}
+```{r data, cache=TRUE, message=F, warning=F}
+# educationdata ipeds outcome measures
 filepath <- "../data/educationdata/ipedsOutcomes2017.csv"
-
-# if file exists, don't make it again cuz it takes a real long time
+## if file exists, don't make it again cuz it takes a real long time
 if(file.exists(filepath)) {
   ipeds17 <- read_csv(filepath)
 } else {
@@ -38,6 +44,60 @@ if(file.exists(filepath)) {
                                 add_labels = TRUE)
   write.csv(ipeds17, filepath, row.names = FALSE)
 }
-
 ipeds17
+
+# us_states from spData
+## updated as of 2015 or something
+data("us_states")
+data(us_states_df) # has poverty measures and things
+us_states
+us_states_df
+
+# us_counties from urbnmapr
+us_counties <- get_urbn_map("counties", sf = TRUE)
+
+# scorecard data
+sc <- read_csv('../data/2019_College_Scorecard_Valid_Admissions_Data.csv')
+
+# county level poverty data
+#usda_pov_19 <- read_xls("../data/usda/PovertyEstimates.xls", skip = 4)
+#usda_pov_19
+
+#usda
+## https://www.ers.usda.gov/data-products/county-level-data-sets/download-data/
+### poverty by county level
+url <- "https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=9293.8"
+GET(url, write_disk(tf <- tempfile(fileext = ".xls")))
+usda_pv <- read_xls(tf, sheet = 1, skip = 4)
+usda_pv
+```
+
+# state maps
+
+```{r states}
+## states by population
+### question: should this be scaled by area?
+us_states %>% ggplot() + geom_sf(aes(fill = total_pop_15)) +
+  scale_fill_continuous(type = "viridis", direction = -1)
+
+## states by median income in 2015
+us_states %>% left_join(us_states_df, by = c("NAME" = "state")) %>%
+  ggplot() + geom_sf(aes(fill = median_income_15)) +
+  scale_fill_continuous(type = "viridis", direction = -1)
+
+## states by median poverty level in 2015
+### does this poverty level look quite right?
+us_states %>% left_join(us_states_df, by = c("NAME" = "state")) %>%
+  ggplot() + geom_sf(aes(fill = poverty_level_15)) +
+  scale_fill_continuous(type = "viridis", direction = -1)
+```
+
+# county maps
+```{r}
+# check shared names
+mean(unique(usda_pv$Area_name) %in% unique(us_counties$county_name))
+
+us_counties %>% left_join(usda_pv, by = c("county_name" = "Area_name")) %>%
+  ggplot() + geom_sf(aes(fill = `Rural-urban_Continuum_Code_2013`), lwd = 0) +
+   geom_sf(data = us_states, color = "white", fill = NA)
 ```
