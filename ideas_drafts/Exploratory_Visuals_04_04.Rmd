@@ -88,8 +88,7 @@ us_states %>% left_join(us_states_df, by = c("NAME" = "state")) %>%
 ## states by median poverty level in 2015
 ### does this poverty level look quite right?
 us_states %>% left_join(us_states_df, by = c("NAME" = "state")) %>%
-  ggplot() + geom_sf(aes(fill = poverty_level_15)) +
-  scale_fill_continuous(type = "viridis", direction = -1)
+  ggplot() + geom_sf(aes(fill = poverty_level_15))
 ```
 
 # county maps
@@ -97,7 +96,16 @@ us_states %>% left_join(us_states_df, by = c("NAME" = "state")) %>%
 # check shared names
 mean(unique(usda_pv$Area_name) %in% unique(us_counties$county_name))
 
-us_counties %>% left_join(usda_pv, by = c("county_name" = "Area_name")) %>%
-  ggplot() + geom_sf(aes(fill = `Rural-urban_Continuum_Code_2013`), lwd = 0) +
-   geom_sf(data = us_states, color = "white", fill = NA)
-```
+# base plot
+p <- us_counties %>% left_join(usda_pv, by = c("county_name" = "Area_name")) %>%
+  ggplot() + scale_fill_continuous(type = "viridis", direction = -1) + ggthemes::theme_tufte()
+## rural-urban continuum_code
+p + geom_sf(aes(fill = `Rural-urban_Continuum_Code_2013`), lwd = 0) +
+  geom_sf(data = us_states, color = "white", fill = NA, lwd = 0.4) +
+  ggtitle("Rural-urban Continuum Code, 2013")
+## poverty estimate of people of all ages living in poverty: PCTPOVALL_2019
+### question: how change the legend to %?
+p + geom_sf(aes(fill = PCTPOVALL_2019), lwd = 0) +
+  geom_sf(data = us_states, color = "white", fill = NA, lwd = 0.4) +
+  ggtitle("Estimated percent of people of all ages in poverty (2019)") +
+  labs(fill = "Percent")
