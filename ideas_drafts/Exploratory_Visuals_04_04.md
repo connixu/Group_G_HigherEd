@@ -237,11 +237,11 @@ GET(url, write_disk(tf <- tempfile(fileext = ".xls")))
 
 ```
 ## Response [https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=9293.8]
-##   Date: 2021-04-05 00:18
+##   Date: 2021-04-05 00:39
 ##   Status: 200
 ##   Content-Type: application/vnd.ms-excel
 ##   Size: 1 MB
-## <ON DISK>  /tmp/RtmpAPy1da/file432854e5aa74.xls
+## <ON DISK>  /tmp/RtmpIPBZgu/file23c1fbe09b.xls
 ```
 
 ```r
@@ -348,7 +348,7 @@ p + geom_sf(aes(fill = `Rural-urban_Continuum_Code_2013`), lwd = 0) +
 p + geom_sf(aes(fill = PCTPOVALL_2019), lwd = 0) +
   geom_sf(data = us_states, color = "white", fill = NA, lwd = 0.4) +
   ggtitle("Estimated percent of people of all ages in poverty (2019)") +
-  labs(fill = "Percent") + geom_sf(data = sc_sf, aes(color = uni_rank), size = 1.5)
+  labs(fill = "Percent") + geom_sf(data = sc_sf, aes(shape = uni_rank), color = "purple", size = 1.5)
 ```
 
 ![](Exploratory_Visuals_04_04_files/figure-html/unnamed-chunk-2-2.png)<!-- -->
