@@ -33,6 +33,10 @@ library(httr)
 # https://github.com/UrbanInstitute/education-data-package-r
 ```
 
+# Data
+
+## educationdata
+
 ```{r data, cache=TRUE, message=F, warning=F}
 # educationdata ipeds outcome measures
 filepath <- "../data/educationdata/ipedsOutcomes2017.csv"
@@ -46,7 +50,12 @@ if(file.exists(filepath)) {
   write.csv(ipeds17, filepath, row.names = FALSE)
 }
 ipeds17
+```
 
+## state and county geospatial and metadata
+Some metadata from usda: https://www.ers.usda.gov/data-products/county-level-data-sets/download-data/
+
+```{r}
 # us_states from spData
 ## updated as of 2015 or something
 data("us_states")
