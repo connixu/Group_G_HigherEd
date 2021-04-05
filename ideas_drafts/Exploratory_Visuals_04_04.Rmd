@@ -6,9 +6,10 @@ always_allow_html: yes
 output: 
   html_document:
     keep_md: true
+    toc: true
 ---
 
-```{r setup}
+```{r setup, message=F, warning=FALSE}
 rm(list=ls())
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -50,8 +51,8 @@ ipeds17
 ## updated as of 2015 or something
 data("us_states")
 data(us_states_df) # has poverty measures and things
-us_states
-us_states_df
+head(us_states)
+head(us_states_df)
 
 # us_counties from urbnmapr
 us_counties <- get_urbn_map("counties", sf = TRUE)
@@ -104,7 +105,7 @@ sc_sf <- sc %>%
     ADM_RATE < 0.3 ~ 'selective',
     ADM_RATE < 0.7 ~ 'less selective',
     TRUE ~ 'not selective')) %>% filter(uni_rank %in% c('elite', 'highly selective')) %>%
-  select(uni_rank, LONGITUDE, LATITUDE) %>% na.omit() %>% st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326)
+  select(uni_rank, LONGITUDE, LATITUDE) %>% na.omit() %>% sf::st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326)
 
 # base plot
 p <- us_counties %>% left_join(usda_pv, by = c("county_name" = "Area_name")) %>%
