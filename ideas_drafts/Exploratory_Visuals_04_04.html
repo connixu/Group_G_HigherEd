@@ -173,6 +173,11 @@ pre code {
 
 <div id="TOC">
 <ul>
+<li><a href="#data">Data</a>
+<ul>
+<li><a href="#educationdata">educationdata</a></li>
+<li><a href="#state-and-county-geospatial-and-metadata">state and county geospatial and metadata</a></li>
+</ul></li>
 <li><a href="#state-maps">state maps</a></li>
 <li><a href="#county-maps">county maps</a></li>
 </ul>
@@ -199,6 +204,10 @@ library(readxl)
 library(httr)
 
 # https://github.com/UrbanInstitute/education-data-package-r</code></pre>
+<div id="data" class="section level1">
+<h1>Data</h1>
+<div id="educationdata" class="section level2">
+<h2>educationdata</h2>
 <pre class="r"><code># educationdata ipeds outcome measures
 filepath &lt;- &quot;../data/educationdata/ipedsOutcomes2017.csv&quot;
 ## if file exists, don&#39;t make it again cuz it takes a real long time
@@ -235,6 +244,10 @@ ipeds17</code></pre>
 ## #   completers_4yr &lt;dbl&gt;, completion_rate_4yr &lt;dbl&gt;, award_cert_6yr &lt;dbl&gt;,
 ## #   award_assoc_6yr &lt;dbl&gt;, award_bach_6yr &lt;dbl&gt;, award_cert_8yr &lt;dbl&gt;,
 ## #   award_assoc_8yr &lt;dbl&gt;, award_bach_8yr &lt;dbl&gt;, unknown_rate_8yr &lt;dbl&gt;</code></pre>
+</div>
+<div id="state-and-county-geospatial-and-metadata" class="section level2">
+<h2>state and county geospatial and metadata</h2>
+<p>Some metadata from usda: <a href="https://www.ers.usda.gov/data-products/county-level-data-sets/download-data/" class="uri">https://www.ers.usda.gov/data-products/county-level-data-sets/download-data/</a></p>
 <pre class="r"><code># us_states from spData
 ## updated as of 2015 or something
 data(&quot;us_states&quot;)
@@ -268,8 +281,45 @@ head(us_states)</code></pre>
 us_counties &lt;- get_urbn_map(&quot;counties&quot;, sf = TRUE)
 
 # scorecard data
-sc &lt;- read_csv(&#39;../data/2019_College_Scorecard_Valid_Admissions_Data.csv&#39;)
-sc</code></pre>
+sc &lt;- read_csv(&#39;../data/2019_College_Scorecard_Valid_Admissions_Data.csv&#39;)</code></pre>
+<pre><code>## Warning: Missing column names filled in: &#39;X1&#39; [1]</code></pre>
+<pre><code>## 
+## ── Column specification ────────────────────────────────────────────────────────
+## cols(
+##   .default = col_logical(),
+##   X1 = col_double(),
+##   UNITID = col_double(),
+##   OPEID = col_double(),
+##   OPEID6 = col_double(),
+##   INSTNM = col_character(),
+##   CITY = col_character(),
+##   STABBR = col_character(),
+##   ZIP = col_character(),
+##   ACCREDAGENCY = col_character(),
+##   INSTURL = col_character(),
+##   NPCURL = col_character(),
+##   HCM2 = col_double(),
+##   MAIN = col_double(),
+##   NUMBRANCH = col_double(),
+##   PREDDEG = col_double(),
+##   HIGHDEG = col_double(),
+##   CONTROL = col_double(),
+##   ST_FIPS = col_double(),
+##   REGION = col_double(),
+##   LOCALE = col_double()
+##   # ... with 937 more columns
+## )
+## ℹ Use `spec()` for the full column specifications.</code></pre>
+<pre><code>## Warning: 44 parsing failures.
+##  row                     col expected            actual                                                       file
+## 1626 OMENRYP_ALL_POOLED_SUPP a double PrivacySuppressed &#39;../data/2019_College_Scorecard_Valid_Admissions_Data.csv&#39;
+## 1626 OMENRAP_ALL_POOLED_SUPP a double PrivacySuppressed &#39;../data/2019_College_Scorecard_Valid_Admissions_Data.csv&#39;
+## 1626 OMAWDP8_ALL_POOLED_SUPP a double PrivacySuppressed &#39;../data/2019_College_Scorecard_Valid_Admissions_Data.csv&#39;
+## 1626 OMENRUP_ALL_POOLED_SUPP a double PrivacySuppressed &#39;../data/2019_College_Scorecard_Valid_Admissions_Data.csv&#39;
+## 1759 OMENRYP_ALL_POOLED_SUPP a double PrivacySuppressed &#39;../data/2019_College_Scorecard_Valid_Admissions_Data.csv&#39;
+## .... ....................... ........ ................. ..........................................................
+## See problems(...) for more details.</code></pre>
+<pre class="r"><code>sc</code></pre>
 <pre><code>## # A tibble: 1,933 x 2,392
 ##       X1 UNITID  OPEID OPEID6 INSTNM   CITY   STABBR ZIP   ACCREDAGENCY  INSTURL
 ##    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt;  
@@ -316,11 +366,11 @@ sc</code></pre>
 url &lt;- &quot;https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=9293.8&quot;
 GET(url, write_disk(tf &lt;- tempfile(fileext = &quot;.xls&quot;)))</code></pre>
 <pre><code>## Response [https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=9293.8]
-##   Date: 2021-04-05 00:08
+##   Date: 2021-04-05 00:18
 ##   Status: 200
 ##   Content-Type: application/vnd.ms-excel
 ##   Size: 1 MB
-## &lt;ON DISK&gt;  /tmp/RtmpbesqPH/file41f22d504c0f.xls</code></pre>
+## &lt;ON DISK&gt;  /tmp/RtmpAPy1da/file432854e5aa74.xls</code></pre>
 <pre class="r"><code>usda_pv &lt;- read_xls(tf, sheet = 1, skip = 4)
 usda_pv</code></pre>
 <pre><code>## # A tibble: 3,193 x 34
@@ -347,6 +397,8 @@ usda_pv</code></pre>
 ## #   CI90UBINC_2019 &lt;dbl&gt;, POV04_2019 &lt;dbl&gt;, CI90LB04_2019 &lt;dbl&gt;,
 ## #   CI90UB04_2019 &lt;dbl&gt;, PCTPOV04_2019 &lt;dbl&gt;, CI90LB04P_2019 &lt;dbl&gt;,
 ## #   CI90UB04P_2019 &lt;dbl&gt;</code></pre>
+</div>
+</div>
 <div id="state-maps" class="section level1">
 <h1>state maps</h1>
 <pre class="r"><code>## states by population

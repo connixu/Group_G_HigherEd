@@ -34,6 +34,10 @@ library(httr)
 # https://github.com/UrbanInstitute/education-data-package-r
 ```
 
+# Data
+
+## educationdata
+
 
 ```r
 # educationdata ipeds outcome measures
@@ -76,6 +80,10 @@ ipeds17
 ## #   award_assoc_6yr <dbl>, award_bach_6yr <dbl>, award_cert_8yr <dbl>,
 ## #   award_assoc_8yr <dbl>, award_bach_8yr <dbl>, unknown_rate_8yr <dbl>
 ```
+
+## state and county geospatial and metadata
+Some metadata from usda: https://www.ers.usda.gov/data-products/county-level-data-sets/download-data/
+
 
 ```r
 # us_states from spData
@@ -124,6 +132,55 @@ us_counties <- get_urbn_map("counties", sf = TRUE)
 
 # scorecard data
 sc <- read_csv('../data/2019_College_Scorecard_Valid_Admissions_Data.csv')
+```
+
+```
+## Warning: Missing column names filled in: 'X1' [1]
+```
+
+```
+## 
+## ── Column specification ────────────────────────────────────────────────────────
+## cols(
+##   .default = col_logical(),
+##   X1 = col_double(),
+##   UNITID = col_double(),
+##   OPEID = col_double(),
+##   OPEID6 = col_double(),
+##   INSTNM = col_character(),
+##   CITY = col_character(),
+##   STABBR = col_character(),
+##   ZIP = col_character(),
+##   ACCREDAGENCY = col_character(),
+##   INSTURL = col_character(),
+##   NPCURL = col_character(),
+##   HCM2 = col_double(),
+##   MAIN = col_double(),
+##   NUMBRANCH = col_double(),
+##   PREDDEG = col_double(),
+##   HIGHDEG = col_double(),
+##   CONTROL = col_double(),
+##   ST_FIPS = col_double(),
+##   REGION = col_double(),
+##   LOCALE = col_double()
+##   # ... with 937 more columns
+## )
+## ℹ Use `spec()` for the full column specifications.
+```
+
+```
+## Warning: 44 parsing failures.
+##  row                     col expected            actual                                                       file
+## 1626 OMENRYP_ALL_POOLED_SUPP a double PrivacySuppressed '../data/2019_College_Scorecard_Valid_Admissions_Data.csv'
+## 1626 OMENRAP_ALL_POOLED_SUPP a double PrivacySuppressed '../data/2019_College_Scorecard_Valid_Admissions_Data.csv'
+## 1626 OMAWDP8_ALL_POOLED_SUPP a double PrivacySuppressed '../data/2019_College_Scorecard_Valid_Admissions_Data.csv'
+## 1626 OMENRUP_ALL_POOLED_SUPP a double PrivacySuppressed '../data/2019_College_Scorecard_Valid_Admissions_Data.csv'
+## 1759 OMENRYP_ALL_POOLED_SUPP a double PrivacySuppressed '../data/2019_College_Scorecard_Valid_Admissions_Data.csv'
+## .... ....................... ........ ................. ..........................................................
+## See problems(...) for more details.
+```
+
+```r
 sc
 ```
 
@@ -180,11 +237,11 @@ GET(url, write_disk(tf <- tempfile(fileext = ".xls")))
 
 ```
 ## Response [https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=9293.8]
-##   Date: 2021-04-05 00:08
+##   Date: 2021-04-05 00:18
 ##   Status: 200
 ##   Content-Type: application/vnd.ms-excel
 ##   Size: 1 MB
-## <ON DISK>  /tmp/RtmpbesqPH/file41f22d504c0f.xls
+## <ON DISK>  /tmp/RtmpAPy1da/file432854e5aa74.xls
 ```
 
 ```r
@@ -281,7 +338,7 @@ p + geom_sf(aes(fill = `Rural-urban_Continuum_Code_2013`), lwd = 0) +
   ggtitle("Rural-urban Continuum Code, 2013")
 ```
 
-![](Exploratory_Visuals_04_04_files/figure-html/unnamed-chunk-1-1.png)<!-- -->
+![](Exploratory_Visuals_04_04_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
 
 ```r
 ## poverty estimate of people of all ages living in poverty: PCTPOVALL_2019
@@ -294,4 +351,4 @@ p + geom_sf(aes(fill = PCTPOVALL_2019), lwd = 0) +
   labs(fill = "Percent") + geom_sf(data = sc_sf, aes(color = uni_rank), size = 1.5)
 ```
 
-![](Exploratory_Visuals_04_04_files/figure-html/unnamed-chunk-1-2.png)<!-- -->
+![](Exploratory_Visuals_04_04_files/figure-html/unnamed-chunk-2-2.png)<!-- -->
