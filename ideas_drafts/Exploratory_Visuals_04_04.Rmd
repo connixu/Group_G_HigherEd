@@ -58,7 +58,7 @@ us_counties <- get_urbn_map("counties", sf = TRUE)
 
 # scorecard data
 sc <- read_csv('../data/2019_College_Scorecard_Valid_Admissions_Data.csv')
-
+sc
 # county level poverty data
 #usda_pov_19 <- read_xls("../data/usda/PovertyEstimates.xls", skip = 4)
 #usda_pov_19
@@ -93,8 +93,18 @@ us_states %>% left_join(us_states_df, by = c("NAME" = "state")) %>%
 
 # county maps
 ```{r}
-# check shared names
+# prep data for plotting
+## check shared names
 mean(unique(usda_pv$Area_name) %in% unique(us_counties$county_name))
+## change projection of sc data
+sc_sf <- sc %>%
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.05 ~ 'elite',
+    ADM_RATE < 0.2 ~ 'highly selective',
+    ADM_RATE < 0.3 ~ 'selective',
+    ADM_RATE < 0.7 ~ 'less selective',
+    TRUE ~ 'not selective')) %>% filter(uni_rank %in% c('elite', 'highly selective')) %>%
+  select(uni_rank, LONGITUDE, LATITUDE) %>% na.omit() %>% st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326)
 
 # base plot
 p <- us_counties %>% left_join(usda_pv, by = c("county_name" = "Area_name")) %>%
@@ -105,7 +115,10 @@ p + geom_sf(aes(fill = `Rural-urban_Continuum_Code_2013`), lwd = 0) +
   ggtitle("Rural-urban Continuum Code, 2013")
 ## poverty estimate of people of all ages living in poverty: PCTPOVALL_2019
 ### question: how change the legend to %?
+### note: change colors so that they are easily visible
+### note: look at other patterns?
 p + geom_sf(aes(fill = PCTPOVALL_2019), lwd = 0) +
   geom_sf(data = us_states, color = "white", fill = NA, lwd = 0.4) +
   ggtitle("Estimated percent of people of all ages in poverty (2019)") +
-  labs(fill = "Percent")
+  labs(fill = "Percent") + geom_sf(data = sc_sf, aes(color = uni_rank), size = 1.5)
+```
