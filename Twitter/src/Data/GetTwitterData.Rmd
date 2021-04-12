@@ -1,0 +1,60 @@
+---
+title: "GetTwitterData"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r packages, message = FALSE, warning = FALSE, echo=FALSE}
+## Run / Install before executing slides
+
+# Load packages.
+library(ggplot2)    # the king of plotting 
+library(magrittr)   # chain operators, e.g. to "pipe" a value forward
+library(stats)
+library(manifestoR)
+library(readtext)
+library(SnowballC)
+library(tidyr)
+library(tidytext)      # for data manipulation 
+library(qdapDictionaries)
+library(base64enc)
+#install.packages("ggridges",dependencies =TRUE)
+library(tidyverse)
+library(RColorBrewer)
+#install.packages("wesanderson")
+library(wesanderson)
+```
+
+Get Twitter API Access
+```{r, echo=FALSE}
+library(rtweet)
+twitter_token <- create_token(
+  app = "higher_ed_group_g",
+  consumer_key = Sys.getenv("TWITTER_KEY"),
+  consumer_secret = Sys.getenv("TWITTER_SECRET"),
+  access_token = Sys.getenv("TWITTER_ACCESS_TOKEN"),
+  access_secret = Sys.getenv("TWITTER_ACCESS_TOKEN_SECRET"))
+```
+
+```{r, echo=FALSE}
+#check token
+twitter_token 
+
+#get tweets that mentions student loan/ student debt
+topic_tweets <- search_tweets(q = "student loan OR student debt",
+                               n = 1000,
+                               include_rts = FALSE)  
+```
+```{r, echo=FALSE}
+#save to RDS
+saveRDS(topic_tweets, "StLoanDebt.RDS")
+```
