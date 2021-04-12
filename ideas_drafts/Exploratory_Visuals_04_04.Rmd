@@ -33,6 +33,21 @@ library(httr)
 # https://github.com/UrbanInstitute/education-data-package-r
 ```
 
+
+```{r lib, echo = F}
+library(shiny)
+library(DT)
+library(tidyverse)
+library(leaflet)
+library(crosstalk)
+library(educationdata)
+library(COVID19)
+library(tmap)
+library(sf)
+library(sp)
+library(tmaptools)
+```
+
 # Data
 
 ## educationdata
@@ -67,7 +82,7 @@ head(us_states_df)
 us_counties <- get_urbn_map("counties", sf = TRUE)
 
 # scorecard data
-sc <- read_csv('../data/2019_College_Scorecard_Valid_Admissions_Data.csv')
+sc <- read_csv('../src/data/2019_College_Scorecard_Valid_Admissions_Data.csv')
 sc
 # county level poverty data
 #usda_pov_19 <- read_xls("../data/usda/PovertyEstimates.xls", skip = 4)
@@ -131,4 +146,40 @@ p + geom_sf(aes(fill = PCTPOVALL_2019), lwd = 0) +
   geom_sf(data = us_states, color = "white", fill = NA, lwd = 0.4) +
   ggtitle("Estimated percent of people of all ages in poverty (2019)") +
   labs(fill = "Percent") + geom_sf(data = sc_sf, aes(shape = uni_rank), color = "purple", size = 1.5)
+```
+
+# shiny attempt
+
+```{r app1}
+
+# User- Interface
+# --------------- # 
+ui <- fluidPage( 
+  plotOutput("map"),
+  plotOutput("graph"),
+  mainPanel(selectInput("uni_rank", "echelon", c("highly selective", "elite")), # Here is where the users chooses the month. Note the tag: "month" 
+  )
+)
+
+# Server
+# ------ #
+
+server <- function(input,output) {
+  output$map <- renderPlot({ # Try renderLeaflet or renderTmap
+  ggplot(merged) +
+      geom_sf(aes(fill = PCTPOVALL_2019), lwd = 0) +
+      geom_sf(data = us_states, color = "white", fill = NA, lwd = 0.4) +
+      scale_fill_continuous(type = "viridis", direction = -1) +
+      geom_sf(data = filter(sc_sf, uni_rank == input$uni_rank), aes(shape = input$uni_rank), color = "purple", size = 5)
+  })
+  
+  output$graph <- renderPlot({
+    ggplot(sc_sf, aes(x = uni_rank)) + geom_bar()
+  })
+
+}
+
+# Run the APP. 
+# ------------ # 
+shinyApp(ui = ui, server = server)
 ```
