@@ -7,12 +7,6 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
 ```{r packages, message = FALSE, warning = FALSE, echo=FALSE}
 ## Run / Install before executing slides
 
@@ -45,16 +39,101 @@ twitter_token <- create_token(
   access_secret = Sys.getenv("TWITTER_ACCESS_TOKEN_SECRET"))
 ```
 
+#PRO Canceling Student Loan
 ```{r, echo=FALSE}
-#check token
-twitter_token 
+#usethis::edit_r_environ()
+# #check token
+# twitter_token 
 
 #get tweets that mentions student loan/ student debt
 topic_tweets <- search_tweets(q = "student loan OR student debt",
-                               n = 1000,
+                               n = 3200,
+                               include_rts = FALSE)
+
+#get tweets that mentions student loan/ student debt
+hashtag_tweets <- search_tweets(q = "#Cancelstudentdebt OR #Cancelstudentloan OR #Studentloanforgiveness",
+                               n = 3200,
+                               include_rts = FALSE)
+```
+
+```{r, echo=FALSE}
+ 
+#get tweets that mentions student loan/ student debt
+StudentDebt <- search_tweets(q = "#studentdebt",
+                               n = 3200,
                                include_rts = FALSE)  
 ```
+
 ```{r, echo=FALSE}
 #save to RDS
-saveRDS(topic_tweets, "StLoanDebt.RDS")
+saveRDS(hashtag_tweets, "hashtag_cancelStudentDebt.RDS")
+
 ```
+
+```{r, echo=FALSE}
+binded1 <- bind_rows(topic_tweets, hashtag_tweets)
+```
+
+###Collecting more tweets by looking at top hashtags usedin conjunction with the most popular tags
+```{r, echo=FALSE}
+#Top Hashtags used in conjunction with #cancelstudentdebt
+hashtags <- unnest(binded, hashtags) %>% 
+  mutate(hashtags = tolower(hashtags)) %>% 
+  count(hashtags, sort=TRUE) %>% 
+  filter(hashtags != "cancelstudentdebt") 
+
+hashtags
+```
+
+###Collecting more tweets by looking at accouts that used #cancestudentdebt the most?
+```{r, echo=FALSE}
+#Top Accounts used #cancelstudentdebt
+Accounts <- unnest(binded, hashtags) %>% 
+  mutate(hashtags = tolower(hashtags)) %>%
+  filter(hashtags=="cancelstudentdebt") %>% 
+  count(screen_name, sort=TRUE)
+
+Accounts
+```
+
+#More hashtags related to Canceling Student Loan
+```{r, echo=FALSE}
+
+#get tweets that mentions #dontcancelstudentdebt
+cancel2 <- search_tweets(q = "#cancelstudentloandebt",
+                               n = 3200,
+                               include_rts = FALSE)  
+
+cancel3<- search_tweets(q = "#cancelstudentloandebt",
+                               n = 3200,
+                               include_rts = FALSE)
+
+cancel4<- search_tweets(q = "#helpmiddleclassamericans",
+                               n = 3200,
+                               include_rts = FALSE)
+
+cancel5<- search_tweets(q = "#zeropercentintereststudentloans",
+                               n = 3200,
+                               include_rts = FALSE)
+
+BorrowerDef <- search_tweets(q = "borrower defense",
+                               n = 3200,
+                               include_rts = FALSE)  
+
+Loanforgive <- search_tweets(q = "loan forgiveness",
+                               n = 3200,
+                               include_rts = FALSE)
+```
+
+```{r, echo=FALSE}
+binded <- bind_rows(topic_tweets, hashtag_tweets, cancel2, cancel3, cancel4, cancel5, StudentDebt, BorrowerDef, Loanforgive) %>% 
+  distinct() #get ride of repeated rows
+
+```
+
+```{r, echo=FALSE}
+#save to RDS
+saveRDS(binded, "Studentloan_tweets.RDS")
+```
+
+
