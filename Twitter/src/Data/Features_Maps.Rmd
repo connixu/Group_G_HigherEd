@@ -30,8 +30,18 @@ library(wesanderson)
 
 ```{r, echo=FALSE}
 # Read in the Tweets
-senator_tweets <- readRDS("senator_tweets.RDS",na.strings=c(""," ","NA"))
+Tweets <- readRDS("Studentloan_tweets.RDS")
 
 # studentloan_tweets <- binded %>% 
 #   select(screen_name, text, display_text_width, favorite_count, hashtags, quoted_name,quoted_followers_count,location, followers_count, favourites_count) 
+```
+
+```{r, echo=FALSE}
+#glimpse(Tweets)
+#select columns, fill empty cells with NA
+studentloan_tweets <- binded %>%
+  select(screen_name, text, display_text_width, favorite_count, hashtags, quoted_name,quoted_followers_count,location, followers_count, favourites_count) %>%
+  mutate_if(is.character, list(~na_if(.,""))) %>% 
+  filter(!is.na(location))
+  
 ```
