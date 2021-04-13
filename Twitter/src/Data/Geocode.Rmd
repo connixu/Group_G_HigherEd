@@ -50,7 +50,6 @@ studentloan_tweets <- Tweets %>%
   filter(!is.na(location))
 
 # #run geocode function through every row, save to dataframe
-# GeoCoded <- purrr::map_df(.x = UES_40$location, .f = ggmap::geocode) 
 
 discard(studentloan_tweets$location, `==`, "") %>%
   ggmap::geocode() -> coded
