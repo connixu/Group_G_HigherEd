@@ -1,6 +1,5 @@
 ---
 title: "Geocoded_Maps"
-
 output: html_document
 ---
 
@@ -39,6 +38,7 @@ Geotweets <- readRDS("StuLoanTweets_geocoded.RDS") %>%
   filter(!is.na(lon)) %>% 
   distinct()
 library(maps)
+
 ```
 
 ```{r, echo=TRUE, eval=TRUE}
@@ -77,5 +77,5 @@ Geotweets <- Geotweets %>%
 
 ```{r, echo=FALSE}
 #Geocoded Tweets with selected columns
-saveRDS(Geotweets, "Geotweets_state_cleaned.RDS")
+saveRDS(Geotweets, "Geotweets_state_clened.RDS")
 ```
