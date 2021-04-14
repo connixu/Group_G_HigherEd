@@ -39,9 +39,7 @@ sc_repay %>%
   facet_wrap(. ~ factor(class, levels =
                           c("repay_rate_highincome", "repay_rate_midincome", "repay_rate_lowincome"))) +
   ggthemes::theme_tufte() +
-  labs(fill = "Cohort Year")
+  labs(fill = "Income Range") + ggtitle("Cohort Repayment Rate")
 ```
 
 ![](repay_rate_files/figure-html/repay_rate-1.png)<!-- -->
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
