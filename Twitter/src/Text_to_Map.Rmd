@@ -1,0 +1,186 @@
+---
+title: "Text_to_Map"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r packages, message = FALSE, warning = FALSE, echo=FALSE}
+## Run / Install before executing slides
+
+# Load packages.
+library(ggplot2)    # the king of plotting 
+library(magrittr)   # chain operators, e.g. to "pipe" a value forward
+library(stats)
+library(manifestoR)
+library(readtext)
+library(SnowballC)
+library(tidyr)
+library(tidytext)      # for data manipulation 
+library(qdapDictionaries)
+library(base64enc)
+#install.packages("ggridges",dependencies =TRUE)
+library(tidyverse)
+library(RColorBrewer)
+#install.packages("wesanderson")
+library(wesanderson)
+library(rtweet)
+library(ggmap)
+library(sp)
+library(leaflet)
+library(tm)
+```
+
+```{r, echo=FALSE}
+Tweets_state <- readRDS('./Data/Geotweets_state_cleaned.RDS') %>% 
+  mutate(id=row_number())
+```
+
+#Convert Dataframe to corpus
+```{r, eval= TRUE, echo=TRUE}
+# Use tm package convert dataframe to corpus: https://www.rdocumentation.org/packages/tm/versions/0.7-8/topics/DataframeSource
+doc_id = c(1:4619)
+text_df <- data.frame(doc_id, text = Tweets_state$text, stringsAsFactors = FALSE)
+
+# Convert example_text to a corpus: Success_corpus
+tweets_corpus <- VCorpus(DataframeSource(text_df))
+
+corpus <- tm_map(tweets_corpus, content_transformer(tolower))
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, removeWords, c(stopwords("en")))
+corpus <- tm_map(corpus, content_transformer(function(x) gsub("[[:cntrl:]]", "", x))) #remove control characters 
+corpus <- tm_map(corpus, content_transformer(function(x) gsub("http\\S+", "", x))) #remove website addresses
+corpus <- tm_map(corpus, content_transformer(function(x) gsub("@[A-Za-z0-9]+", "", x))) #remove mentions in text
+corpus <- tm_map(corpus, stripWhitespace)
+corpus <- tm_map(corpus, removePunctuation)
+
+#Document Term Matrix of tweets
+tweets_dtm <- DocumentTermMatrix(corpus)
+```
+
+#Convert DTM to tidy dataframe
+```{r, eval= TRUE, echo=TRUE}
+tweets_tidy <- tidy(tweets_dtm) %>% 
+  mutate(index = as.numeric(document)) %>% 
+  left_join(Tweets_state, by=c("index"="id"))
+```
+
+```{r, echo=FALSE}
+#Geocoded Tweets with selected columns
+#saveRDS(tweets_tidy, "TidyTwText.RDS")
+```
+
+```{r, eval= TRUE, echo=TRUE}
+# Get Bing lexicon
+bing <- get_sentiments("bing")
+
+# Join text to lexicon
+Tweets_bing <- inner_join(tweets_tidy, bing, by = c("term" = "word")) %>%
+   # Count by sentiment, index, document
+  count(sentiment,index,document, text) %>%
+   # Spread sentiments
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive-negative) 
+```
+
+```{r, eval= TRUE, echo=TRUE}
+# Join sentiment score with original twitter data fame
+Tweets_sentiment <- Tweets_state %>% 
+  inner_join(Tweets_bing, by = c("id" = "index")) %>% 
+  select(-c(text.y,document, size=favorite_count)) 
+
+Pos_Neg <- ggplot(Tweets_sentiment, aes(x=positive,y=negative)) +
+  geom_jitter(alpha=0.8, color="rosybrown3") +
+  theme_minimal()
+png("Pos_Neg.png") #Saving plot to png
+print(Pos_Neg)
+dev.off()
+```
+
+#Let’s make a choropleth map based on sentiment score by state
+```{r, eval= TRUE, echo=TRUE}
+
+# count by state
+tw_state <- Tweets_sentiment %>%
+  mutate(state = ifelse(state=="new york:long island","new york",
+                        ifelse(state=="new york:main","new york",
+                        ifelse(state=="new york:main","new york",
+                        ifelse(state=="new york:manhattan","new york",
+                        ifelse(state=="north carolina:main","north carolina",
+                        ifelse(state=="massachusetts:main","massachusetts",
+                        ifelse(state=="michigan:north","michigan",
+                        ifelse(state=="michigan:south","michigan",
+                        ifelse(state=="virginia:main", "virginia",
+                        ifelse(state=="washington:main","washington",state))))))))))) %>% 
+  group_by(state) %>% 
+  mutate(N=n(), T.Sentiment=sum(sentiment), WordCounts = sum(display_text_width)) %>%   #get total number of tweets & sum of sentiment score by state
+  select(display_text_width, lon, lat, state, T.Sentiment, N, WordCounts) %>%  #lon & lat are vary within each state.Keep first one. 
+  group_by(state, lon, lat) %>% 
+  summarise(Avg.Sentiment=T.Sentiment/N, WordCounts=WordCounts) %>% #calculate average sentiment score by state and keep total word counts by state
+  ungroup(lon,lat) %>% 
+  filter(row_number()==1) %>% 
+  mutate(lon=ifelse(state=="new york",-73.935242, lon)) %>%  #change coordinates for New York State
+  mutate(lat=ifelse(state=="new york",40.730610,lat)) %>% 
+  filter(!is.na(state))
+
+# Polygon stuff from shape file
+#install.packages("tigris")
+library(tigris)
+states <- states(cb=T) %>%
+  mutate(name = tolower(NAME))
+
+# Use the Tigris function geo_join to bring together the states shapefile and the tw_states dataframe
+states_shape_tweets <- geo_join(states, tw_state, "name", "state")
+
+
+# Creating a color palette based on the number range in the total column
+pal <- colorNumeric("YlOrRd", domain=states_shape_tweets$Avg.Sentiment)
+
+# Setting up the pop up text
+popup_sb <- paste0("State: ", as.character(states_shape_tweets$NAME),"<br/>",
+                  "Average Sentiment Score: ", as.character(states_shape_tweets$Avg.Sentiment),"<br/>",
+                 "Total Word Count: ",as.character(states_shape_tweets$WordCounts),"<br/>")
+
+# Mapping it with the new tiles CartoDB.Positron
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  setView(-98.483330, 38.712046, zoom = 4) %>%
+  addPolygons(data = states_shape_tweets ,
+              fillColor = ~pal(states_shape_tweets$Avg.Sentiment),
+              fillOpacity = 0.7,
+              weight = 1.5,
+              opacity = 1,
+              color = "cornsilk",
+              dashArray = "3",
+              smoothFactor = 0.2,
+              popup = ~popup_sb,
+              highlight = highlightOptions(weight = 4,
+                                           color = "#839EA8",
+                                           dashArray = "",
+                                           fillOpacity = 0.7,
+                                           bringToFront = TRUE),
+              popupOptions = popupOptions(style = list("font-weight" = "normal",
+                                                       padding = "3px 8px",
+                                                       "box-shadow" = "3px 3px rgba(0,0,0,0.25)"),
+                                          textsize = "15px",
+                                          direction = "auto")) %>%
+  addLegend(pal = pal,
+            values = states_shape_tweets$Avg.Sentiment,
+            position = "bottomleft",
+            title = "Average Sentiment Score",
+            opacity = 0.7)
+
+```
+
+#Map Word counts by state 
+```{r, echo=FALSE}
+
+leaflet(states_shape_tweets) %>%
+  addTiles('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', 
+    attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>') %>%
+  addCircles(lng = ~lon, lat = ~lat, weight = 2,
+    radius = ~WordCounts, popup=~popup_sb,color="#ffa500", stroke = TRUE, fillOpacity = 0.8) 
+```
