@@ -9,7 +9,8 @@ output:
     toc: true
 ---
 
-```{r setup, message=F, warning=F}
+
+```r
 library(ggplot2)
 library(tidyverse)
 
@@ -26,7 +27,8 @@ if(file.exists(filepath)) {
 scorecard <- readr::read_csv("../data/2019_College_Scorecard_Valid_Admissions_Data.csv")
 ```
 
-```{r repay_rate, message=F, warning=F}
+
+```r
 #selective_schools <- na.omit(scorecard$OPEID[scorecard$ADM_RATE < 0.3])
 
 sc_repay %>%
@@ -39,5 +41,7 @@ sc_repay %>%
   ggthemes::theme_tufte() +
   labs(fill = "Cohort Year")
 ```
+
+![](repay_rate_files/figure-html/repay_rate-1.png)<!-- -->
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
