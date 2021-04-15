@@ -1,0 +1,129 @@
+---
+title: "Visuals_Draft_04_14"
+author: "Connie Xu"
+date: "4/14/2021"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages, echo=FALSE, eval=TRUE, warning=FALSE, message=FALSE}
+suppressMessages(r = getOption("repos"))
+suppressMessages(r["CRAN"] = "http://cran.us.r-project.org")
+suppressMessages(options(repos = r))
+# install.packages (basic)
+suppressMessages(library(dplyr))
+suppressMessages(library(tidyverse))
+
+# install.packages (reading)
+suppressMessages(library(XML))
+suppressMessages(library(RCurl))
+suppressMessages(library(readr))
+suppressMessages(library("readxl"))
+
+# install.packages (themes)
+suppressMessages(library(ggthemes))
+suppressMessages(library(ggrepel))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(viridis))
+suppressMessages(library(hrbrthemes))
+suppressMessages(library(plotly))
+
+
+# install.packages (maps)
+suppressMessages(library(RgoogleMaps))
+suppressMessages(library(ggmap))
+suppressMessages(install.packages("maps"))
+suppressMessages(install.packages("tmap")) # install the CRAN version
+suppressMessages(library(tmap))
+suppressMessages(install.packages('rgeos'))
+
+suppressMessages(library(devtools))
+# Let's install the development version from Github. Run
+suppressMessages(devtools::install_github("rstudio/leaflet"))
+```
+
+```{r import general data, echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE}
+library(educationdata)
+# Test Run with using get_education_data 
+# data <- get_education_data(level = "college-university",
+#     source = "ipeds",
+#     topic = "directory",
+#     filters = list(year = 2019))
+# data
+
+# Scorecard data - 2019 
+sc <- read_csv('2019_College_Scorecard_Valid_Admissions_Data.csv')
+sc
+
+## change projection of sc data
+sc <- sc %>%
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.05 ~ 'elite',
+    ADM_RATE < 0.2 ~ 'highly selective',
+    ADM_RATE < 0.3 ~ 'more selective',
+    ADM_RATE < 0.5 ~ 'selective',
+    ADM_RATE < 0.7 ~ 'less selective',
+    TRUE ~ 'not selective')) %>% mutate(uni_rank = factor(uni_rank, levels=c('not selective', 'less selective', 'selective', 'more selective', 'highly selective', 'elite')))
+```
+
+## Simple Scattergram 
+
+First we are going to try to present this pattern for different tiers of universities (admission rate as well as debt)
+```{r, echo=TRUE, eval=TRUE}
+m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN))%>% ggplot(., aes(x=ADM_RATE, y=DEBT_MDN,color=uni_rank)) +
+  geom_point() +
+  geom_smooth(color='#EA4F88', se = FALSE) +
+  theme_ipsum(base_size = 10, axis_title_size = 12, plot_title_size=14) +
+  scale_color_viridis_d()+
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  scale_y_discrete(limits=c(0,10000,20000,30000), labels=c('0','10','20','30')) +
+  labs(x='Admissions Rate', y='Median Loan Amount per Student\n(thousands)', 
+       title='Student Debt and Admissions Rate',
+       color='Selectivity')
+m
+```
+
+## Scattergram as Violin Plot
+```{r, echo=TRUE, eval=TRUE}
+m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+  ggplot(., aes(x=uni_rank, y=DEBT_MDN)) +
+  geom_violin(aes(fill=uni_rank,color=uni_rank)) +
+  geom_boxplot(width = 0.2)+
+  theme_ipsum(base_size = 10, axis_title_size = 12, plot_title_size=14) +
+  scale_fill_viridis_d() + 
+  scale_color_viridis_d() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  scale_y_discrete(limits=c(0,10000,20000,30000), labels=c('0','10','20','30')) +
+  scale_x_discrete(labels=c('not\nselective\n(>70%)','less\nselective\n(50%-70%)',
+                            'selective\n(30%-50%)','more\nselective\n(20%-30%)','highly\nselective\n(5%-20%)','elite\n(<5%)')) +
+
+  labs(x='Selectivity\n(admission rate thresholds)', y='Median Loan Amount per Student\n(thousands)', 
+       title='Selective Schools and Student Debt',
+       color='Selectivity',fill='Selectivity')
+m
+```
+
+```{r, echo=TRUE, eval=TRUE}
+ipeds15 <- get_education_data(level = "college-university",
+    source = "ipeds",
+    topic = "grad-rates-pell",
+    filters = list(year = 2015))
+ipeds15
+```
+
+
+## Maps :) 
+
+```{r, echo=TRUE, eval=TRUE}
+sc_time <- read_csv('2010_2019_student_debt.csv') 
+sc_time
+```
+
+
