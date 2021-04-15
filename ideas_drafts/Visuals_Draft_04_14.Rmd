@@ -10,9 +10,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r packages, echo=FALSE, eval=TRUE, warning=FALSE, message=FALSE}
-suppressMessages(r = getOption("repos"))
-suppressMessages(r["CRAN"] = "http://cran.us.r-project.org")
-suppressMessages(options(repos = r))
+r = getOption("repos")
+r["CRAN"] = "http://cran.us.r-project.org"
+options(repos = r)
 # install.packages (basic)
 suppressMessages(library(dplyr))
 suppressMessages(library(tidyverse))
@@ -73,7 +73,11 @@ sc <- sc %>%
 
 First we are going to try to present this pattern for different tiers of universities (admission rate as well as debt)
 ```{r, echo=TRUE, eval=TRUE}
-m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN))%>% ggplot(., aes(x=ADM_RATE, y=DEBT_MDN,color=uni_rank)) +
+# Remove PrivacySuppressed Records and transform Debt Median into a numeric value - we can also do this on the main sc df
+sc$DEBT_MDN[is.na(sc$DEBT_MDN)] <- 0;
+
+m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+              ggplot(., aes(x=ADM_RATE, y=DEBT_MDN,color=uni_rank)) +
   geom_point() +
   geom_smooth(color='#EA4F88', se = FALSE) +
   theme_ipsum(base_size = 10, axis_title_size = 12, plot_title_size=14) +
@@ -87,6 +91,22 @@ m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.n
        color='Selectivity')
 m
 ```
+```{r, echo=TRUE, eval=TRUE}
+# Create Data Table (Summarized) for 
+library('scales')
+
+sc_dt <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% group_by(uni_rank) %>% mutate(`Number of Universities` = n()) %>% ungroup() %>% mutate(DEBT_MDN_STUDENTS = DEBT_MDN*UGDS) %>% group_by(uni_rank) %>% mutate(`Median Student Loans` = paste('$',round(sum(DEBT_MDN_STUDENTS, na.rm=TRUE)/sum(UGDS, na.rm=TRUE),2))) %>% 
+  mutate(`Min Acceptance Rate` = percent(min(ADM_RATE))) %>% mutate(`Max Acceptance Rate` = percent(max(ADM_RATE))) %>% ungroup() %>% 
+  group_by(uni_rank,`Median Student Loans`,`Number of Universities`,`Min Acceptance Rate`,`Max Acceptance Rate`) %>% 
+  summarize()
+
+install.packages('DT')
+library(DT)
+table <- datatable(sc_dt,style = "default",filter = 'top',  caption = 'Universities and Selectivity')
+table
+
+```
+
 
 ## Scattergram as Violin Plot
 ```{r, echo=TRUE, eval=TRUE}
@@ -106,7 +126,7 @@ m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.n
 
   labs(x='Selectivity\n(admission rate thresholds)', y='Median Loan Amount per Student\n(thousands)', 
        title='Selective Schools and Student Debt',
-       color='Selectivity',fill='Selectivity')
+       color='',fill='')
 m
 ```
 
@@ -119,11 +139,178 @@ ipeds15
 ```
 
 
-## Maps :) 
+## Student Debt over Time
 
 ```{r, echo=TRUE, eval=TRUE}
+#Process the data 
 sc_time <- read_csv('2010_2019_student_debt.csv') 
-sc_time
+
+sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
+  transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+  dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN))
+
 ```
+
+
+```{r, echo=TRUE, eval=TRUE}
+#Process the data 
+sc_time <- read_csv('2009_2019_student_debt.csv') 
+
+sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
+  transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+  dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) %>% 
+  mutate(DEBT_MDN_STUDENT = DEBT_MDN*UGDS)
+
+sum(sc_time$UGDS,na.rm=TRUE)
+```
+
+```{r, echo=TRUE, eval=TRUE}
+# CPI Inflation Rates - Got Average Yearly Inflation Rate for Scaling for Student Debt 
+install.packages('quantmod')
+library(quantmod)
+getSymbols("CPIAUCSL", src='FRED')
+avg.cpi <- apply.yearly(CPIAUCSL, mean)
+cf <- as.data.frame(avg.cpi/as.numeric(avg.cpi['2009'])) 
+cf$Year_Ending <- format(as.Date(row.names(cf), format="%Y-%m-%d"),"%Y")
+
+# Merged for Inflation 
+sc_time_df <- sc_time %>% group_by(`Year_Ending`) %>% mutate(`Average Annual Student Debt - National` = sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% ungroup() %>% 
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.05 ~ 'elite',
+    ADM_RATE < 0.2 ~ 'highly selective',
+    ADM_RATE < 0.3 ~ 'more selective',
+    ADM_RATE < 0.5 ~ 'selective',
+    ADM_RATE < 0.7 ~ 'less selective',
+    TRUE ~ 'not selective')) %>%
+  mutate(uni_rank = factor(uni_rank, levels=c('not selective', 'less selective', 'selective', 
+                                              'more selective', 'highly selective', 'elite'))) %>%
+  group_by(uni_rank,Year_Ending) %>% 
+  mutate(`Average Annual Student Debt (by Selectivity)` = sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  group_by(`Year_Ending`,`Average Annual Student Debt (by Selectivity)`,
+           uni_rank,`Average Annual Student Debt - National`) %>% summarize() %>% 
+  merge(cf) %>% 
+  mutate(`Adjusted Average Annual Student Debt` = `Average Annual Student Debt (by Selectivity)`/
+           CPIAUCSL) %>% 
+  mutate(`Adjusted Average Annual Student Debt - Composite` = `Average Annual Student Debt - National`/
+           CPIAUCSL)
+
+sc_df <- sc_time_df %>% group_by(`Average Annual Student Debt - National`,`Adjusted Average Annual Student Debt - Composite`,Year_Ending) %>% summarize() %>% mutate(uni_rank='national average') %>% mutate(`Adjusted Average Annual Student Debt`=`Adjusted Average Annual Student Debt - Composite`) %>% dplyr::mutate(`Average Annual Student Debt (by Selectivity)` = `Average Annual Student Debt - National`) %>% merge(cf) %>% select(Year_Ending,`Average Annual Student Debt (by Selectivity)`, uni_rank, `Average Annual Student Debt - National`, CPIAUCSL, `Adjusted Average Annual Student Debt`,`Adjusted Average Annual Student Debt - Composite`)
+sc_time_df <- sc_time_df %>% rbind(sc_df) %>% mutate(uni_rank = factor(uni_rank, levels=c('national average','not selective', 'less selective', 'selective', 
+                                              'more selective', 'highly selective', 'elite')))
+sc_time_df
+
+p <- sc_time_df %>% 
+  ggplot(.,aes(x=Year_Ending,y=`Adjusted Average Annual Student Debt`, color=uni_rank)) + 
+  geom_point() + geom_line() + 
+  theme_ipsum(base_size = 10, axis_title_size = 12, plot_title_size=14) +
+  scale_color_viridis_d()+
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()) +
+  scale_x_continuous(breaks = round(seq(min(sc_time$Year_Ending), max(sc_time$Year_Ending), by = 2),1)) +
+  labs(x='', y='Median Loan Amount per Student\n(thousands)', 
+       title='Student Debt Has Been Rising Over The Years',
+       color='',fill='')
+ggplotly(p)
+
+fig1 <- sc_time_df %>% plot_ly(x = ~Year_Ending, y = ~`Adjusted Average Annual Student Debt`, type = 'scatter',
+  color = ~uni_rank, alpha=0.8, hovertemplate = 'Average Debt/Student (USD): %{y}% <extra></extra>') %>% add_lines(x = ~Year_Ending,y = ~`Adjusted Average Annual Student Debt`,line = list(color =~uni_rank)) 
+?linetype
+
+fig1
+
+
+```
+
+
+```{r, echo=TRUE, eval=TRUE }
+# Additions of States df from Tigris File 
+library(tigris)
+states <- states(cb = TRUE)
+sc_time
+sc_time_year <- sc_time %>% group_by()
+
+# States 
+states_10 <- states %>% 
+  inner_join(sc_time, by=c(STUSPS='STABBR')) 
+
+
+popup1 <- paste("State:",states$NAME,"<br/>",
+                 "Population:",states$population,"<br/>",
+                 "Successful Projects / Population:",states$scaled_success,"<br/>")
+
+#used 'success' measures. 
+m <- leaflet(states) %>% addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(fillColor = ~pal(states$scaled_success),
+              color = "white",
+              weight = 0.5,
+              fillOpacity = 0.7,  
+              highlight = highlightOptions(
+                weight = 5,
+                color = "#666",
+                fillOpacity = 0.7,
+                bringToFront = TRUE),
+                popup=popup1) %>%
+  addLegend(position = "bottomleft",pal = pal, values = c(min(states$scaled_success),max(states$scaled_success)),title = "Successful Kickstarter Projects\n (scaled by state)") %>% 
+  setView(-98.5795, 39.8282, zoom=3)
+
+
+library(dplyr)
+library(leaflet)
+
+# Fake data
+df <- data.frame(lng = c(-5, -5, -5, -5, -15, -15, -10),
+               lat = c(8, 8, 8, 8, 33, 33, 20),
+               year = c(2018, 2018, 2018, 2017, 2017, 2017, 2016),
+               stringsAsFactors = FALSE)
+
+ui <- bootstrapPage(
+tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
+leafletOutput("map", width = "100%", height = "100%"),
+absolutePanel(top = 10, right = 10,
+              style="z-index:500;", # legend over my map (map z = 400)
+              tags$h3("map"), 
+              sliderInput("periode", "Chronology",
+                          min(df$year),
+                          max(df$year),
+                          value = range(df$year),
+                          step = 1,
+                          sep = ""
+              )
+)
+)
+
+server <- function(input, output, session) {
+
+# reactive filtering data from UI
+
+reactive_data_chrono <- reactive({
+  df %>%
+    filter(year >= input$periode[1] & year <= input$periode[2])
+})
+
+
+# static backround map
+output$map <- renderLeaflet({
+  leaflet(df) %>%
+    addTiles() %>%
+    fitBounds(~min(lng), ~min(lat), ~max(lng), ~max(lat))
+})  
+
+# reactive circles map
+observe({
+  leafletProxy("map", data = reactive_data_chrono()) %>%
+    clearShapes() %>%
+    addMarkers(lng=~lng,
+               lat=~lat,
+               layerId = ~id) # Assigning df id to layerid
+})
+}
+
+shinyApp(ui, server)
+
+```
+
 
 
