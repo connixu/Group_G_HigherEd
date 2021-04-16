@@ -26,16 +26,32 @@ if(file.exists(filepath)) {
 scorecard <- readr::read_csv("../data/2019_College_Scorecard_Valid_Admissions_Data.csv")
 ```
 
+# steps
+1. list out independent variables
+2. which independent variable do I need to sum over to get 1 if I included the other group
+
+```{r}
+scorecard$CDR3
+sc_repay
+sc_repay %>% group_by(years_since_entering_repay, cohort_year) %>% summarize(n(), sum(repay_rate))
+sc_repay %>% filter(year < cohort_year)
+sc_repay
+```
+
 ```{r repay_rate, message=F, warning=F}
 #selective_schools <- na.omit(scorecard$OPEID[scorecard$ADM_RATE < 0.3])
+#question: select for nonprofit and private schools?
 
 sc_repay %>%
+  #filter(years_since_entering_repay <= 2) %>%
   pivot_longer(cols = c("repay_rate_lowincome", "repay_rate_midincome", "repay_rate_highincome"),
                names_to = "class", values_to = "rates") %>%
   filter(rates > 0) %>%
   ggplot(aes(x = year, y = rates, group = cohort_year, fill = class)) + geom_violin() +
-  facet_wrap(. ~ factor(class, levels =
-                          c("repay_rate_highincome", "repay_rate_midincome", "repay_rate_lowincome"))) +
+  facet_grid(. ~ factor(class, levels =
+                          c("repay_rate_highincome", "repay_rate_midincome", "repay_rate_lowincome")),
+             scales = "free", space = "free") +
   ggthemes::theme_tufte() +
-  labs(fill = "Income Range") + ggtitle("Cohort Repayment Rate")
+  labs(fill = "Income Range") + #ggtitle("Fraction of Students Making Progress") +
+  xlab(NULL) + ylab(NULL)
 ```
