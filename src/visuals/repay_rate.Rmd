@@ -103,3 +103,34 @@ sc_repay %>%
         plot.title = element_text(hjust=0.5),
         strip.text.x = element_blank(), axis.ticks = element_blank())
 ```
+
+```{r}
+sc_repay %>% #filter(cohort_year %in% 2006:2008) %>%
+  
+  # data wrangle
+  #filter(years_since_entering_repay <= 1) %>%
+  pivot_longer(cols = c("repay_rate_lowincome", "repay_rate_midincome", "repay_rate_highincome"),
+               names_to = "class", values_to = "rates") %>%
+  filter(rates > 0) %>%
+  ## order levels to apply to multiple commands in ggplot
+  mutate(class = factor(class, levels =
+                          c("repay_rate_highincome", "repay_rate_midincome", "repay_rate_lowincome"))) %>%
+  
+  # plot
+  ggplot(aes(x = rates, y = fct_rev(factor(cohort_year)), fill = class), alpha = 0.5) +
+  geom_density_ridges(scale = 1.5, color = "gray") +
+  
+  # labels
+  ggtitle("Proportion of Fiscal Cohort Whose Loan Balances Have Declined") +
+  ylab("Fiscal Cohort") + xlab(NULL) +
+  scale_fill_brewer(name = "Family Income Range:", labels = c("High", "Middle", "Low"), direction = -1) +
+  scale_x_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
+  scale_x_continuous(labels = scales::percent_format()) +
+  
+  theme(panel.grid = element_line(color = "white"),
+        text = element_text(family = "serif"),
+        panel.background = element_blank(),
+        legend.position = "bottom",
+        axis.ticks = element_blank(),
+        plot.title = element_text(hjust=0.5))
+```
