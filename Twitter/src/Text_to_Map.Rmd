@@ -182,5 +182,11 @@ leaflet(states_shape_tweets) %>%
   addTiles('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', 
     attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>') %>%
   addCircles(lng = ~lon, lat = ~lat, weight = 2,
-    radius = ~WordCounts, popup=~popup_sb,color="#ffa500", stroke = TRUE, fillOpacity = 0.8) 
+    radius = ~WordCounts*3.3, popup=~popup_sb,color="#E871E0", stroke = TRUE, fillOpacity = 0.8) 
+```
+
+
+```{r, echo=FALSE}
+library(rsconnect)
+#rsconnect::deployApp('grace-xuejing-li-visuals')
 ```
