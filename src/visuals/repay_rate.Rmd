@@ -45,43 +45,61 @@ scorecard
 # fraction of repayment cohort that is not currently in default
 
 sc_repay %>%
-  
+  # data wrangle
   #filter(years_since_entering_repay <= 1) %>%
   pivot_longer(cols = c("repay_rate_lowincome", "repay_rate_midincome", "repay_rate_highincome"),
                names_to = "class", values_to = "rates") %>%
   filter(rates > 0) %>%
-  ggplot(aes(x = year, y = rates, group = cohort_year, fill = class)) + geom_violin(color = "lightgray") +
-  #facet_grid(cohort_year ~ .) +
-  facet_grid(. ~ factor(class, levels =
-                          c("repay_rate_highincome", "repay_rate_midincome", "repay_rate_lowincome")),
-             scales = "free", space = "free") +
-  ggthemes::theme_tufte() +
-  # who are not in default, and with loan balances that have declined
-  ggtitle("Fraction Of Students In Fiscal Cohorts Whose Loan Balances\nHave Declined One Year After Entering Repayment") +
+  ## order levels to apply to multiple commands in ggplot
+  mutate(class = factor(class, levels =
+                          c("repay_rate_highincome", "repay_rate_midincome", "repay_rate_lowincome"))) %>%
+  
+  # plot
+  ggplot(aes(x = year, y = rates, group = cohort_year, fill = class)) +
+  geom_violin(color = "lightgray") + facet_grid(. ~ class) +
+  ## themes
+  ggthemes::theme_tufte() + # add base theme first and then modify
+  theme(panel.spacing = unit(1, "cm"),
+        panel.border = element_rect(colour = "lightgray", fill=NA, size=1),
+        legend.position = "bottom",
+        plot.title = element_text(hjust=0.5),
+        strip.text.x = element_blank(), axis.ticks = element_blank()) +
+  ## labels
+  ggtitle("Fraction Of Students In Successive Fiscal Cohorts\nWhose Loan Balances Have Declined") +
   xlab(NULL) + ylab(NULL) +
-  scale_fill_viridis_d(name = "Income Range:", labels = c("High Income", "Middle Income", "Low Income")) + #geom_smooth(aes(group = cohort_year), method = "lm") +
-  theme(#panel.border = element_rect(color = "lightgray"),
-    #panel.spacing = unit(1, "cm"),
-    #panel.grid.minor = element_line(colour = "grey"),
-    legend.position = "bottom",
-    plot.title = element_text(hjust=0.5),
-        strip.text.x = element_blank())
+  scale_fill_viridis_d(name = "Income Range:", labels = c("High Income", "Middle Income", "Low Income")) +
+  ## percents
+  scale_y_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
+  scale_y_continuous(labels = scales::percent_format())
+  
 
 sc_repay %>%
+  # data wrangle
   filter(repay_rate > 0, years_since_entering_repay == 1) %>%
   group_by(cohort_year, year, years_since_entering_repay) %>%
   summarize_if(is.numeric, median) %>% select(contains("year"), contains("rate")) %>%
-  pivot_longer(cols = c("repay_rate_lowincome", "repay_rate_midincome", "repay_rate_highincome", "repay_rate"),
+  pivot_longer(cols = c("repay_rate_lowincome", "repay_rate_midincome",
+                        "repay_rate_highincome", "repay_rate"),
                names_to = "class", values_to = "median_rates") %>%
   mutate(total = class == "repay_rate",
-         class = factor(class, c("repay_rate", "repay_rate_highincome", "repay_rate_midincome", "repay_rate_lowincome"))) %>%
-  
-  ggplot(aes(x = cohort_year, y = median_rates, group = class, color = class)) + geom_line() + geom_point() +
-  facet_wrap(. ~ factor(total, c(TRUE, FALSE))) +
-  ggtitle("Fraction of Students in a Fiscal Cohort Whose Loan Balances\nHave Declined One Year After Entering Repayment") +
-  xlab("Cohort Year") + ylab("Median Fraction of Fiscal Cohort") +
-  #scale_color_discrete() +
-  scale_color_viridis_d(name = "Median Fraction\nof Cohort", labels = c("Overall", "High Income", "Middle Income", "Low Income")) + ggthemes::theme_tufte() +
-  theme(panel.background = element_rect(fill = "lightgray", color = "lightgray"),
-        strip.text.x = element_blank())
+         class = factor(class, c("repay_rate", "repay_rate_highincome",
+                                 "repay_rate_midincome", "repay_rate_lowincome"))) %>%
+  # plot
+  ggplot(aes(x = cohort_year, y = median_rates, group = class, color = class)) +
+  geom_point() + geom_line(aes(group = cohort_year)) +
+  #facet_wrap(. ~ factor(total, c(TRUE, FALSE))) +
+  ## labels
+  ggtitle("Fraction of Students whose Loan Balances Declined in their First Year of Repayment") +
+  xlab("\nCohort Year") + ylab("Median Fraction of Fiscal Cohort\n") +
+  scale_color_viridis_d(name = "Income Range:",
+                        labels = c("Overall", "High Income", "Middle Income", "Low Income")) +
+  scale_y_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  ## themes
+  ggthemes::theme_tufte() +
+  theme(panel.spacing = unit(1, "cm"),
+        #panel.border = element_rect(colour = "lightgray", fill=NA, size=1),
+        legend.position = "bottom",
+        plot.title = element_text(hjust=0.5),
+        strip.text.x = element_blank(), axis.ticks = element_blank())
 ```
