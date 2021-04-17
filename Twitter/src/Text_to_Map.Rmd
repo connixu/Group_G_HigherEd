@@ -32,11 +32,33 @@ library(ggmap)
 library(sp)
 library(leaflet)
 library(tm)
+library(htmlwidgets)
+library(htmltools)
+#install.packages("leaflet.extras", dependencies = TRUE)
+library(leaflet.extras)
+library(zoo)
 ```
 
 ```{r, echo=FALSE}
 Tweets_state <- readRDS('./Data/Geotweets_state_cleaned.RDS') %>% 
   mutate(id=row_number())
+```
+
+```{r, echo=FALSE}
+SearchTrend <- read_csv('./Data/SearchTrend.csv', col_names = TRUE, skip = 2) %>% 
+  rename(Total_Searches = 'student loan forgiveness: (United States)') %>% 
+  mutate(Time = as.Date(Month, "%y-%b"))
+
+min <- as.Date("2004-01-01")
+max <- as.Date("2021-05-01")
+
+Trend <- ggplot(SearchTrend,aes(x=Time, y=Total_Searches,color = "darkgoldenrod1", group=1)) +
+  geom_line() +
+  scale_color_manual(values="#F2C65F")+
+  scale_x_date(limits = c(min, max))+
+  theme_minimal()
+
+Trend
 ```
 
 #Convert Dataframe to corpus
@@ -65,7 +87,32 @@ tweets_dtm <- DocumentTermMatrix(corpus)
 ```{r, eval= TRUE, echo=TRUE}
 tweets_tidy <- tidy(tweets_dtm) %>% 
   mutate(index = as.numeric(document)) %>% 
-  left_join(Tweets_state, by=c("index"="id"))
+  left_join(Tweets_state, by=c("index"="id")) %>% 
+    mutate(state = ifelse(state=="new york:long island","new york",
+                        ifelse(state=="new york:main","new york",
+                        ifelse(state=="new york:main","new york",
+                        ifelse(state=="new york:manhattan","new york",
+                        ifelse(state=="north carolina:main","north carolina",
+                        ifelse(state=="massachusetts:main","massachusetts",
+                        ifelse(state=="michigan:north","michigan",
+                        ifelse(state=="michigan:south","michigan",
+                        ifelse(state=="virginia:main", "virginia",
+                        ifelse(state=="washington:main","washington",state))))))))))) 
+```
+
+#Get list of top words by state
+```{r, eval= TRUE, echo=TRUE}
+State_top_words <- tweets_tidy %>% 
+  select(term, count, state) %>% 
+  group_by(state, term) %>% 
+  summarise(total=sum(count)) %>% 
+  arrange(desc(total)) %>% 
+  filter(! term %in% c("student","loan","debt","cancelstudentdebt","amp")) %>% 
+  group_by(state) %>% 
+  slice_max(order_by = total, n=15) %>% 
+  select(-total) %>% 
+  summarise(Terms = list(term))
+  
 ```
 
 ```{r, echo=FALSE}
@@ -95,6 +142,9 @@ Tweets_sentiment <- Tweets_state %>%
 Pos_Neg <- ggplot(Tweets_sentiment, aes(x=positive,y=negative)) +
   geom_jitter(alpha=0.8, color="rosybrown3") +
   theme_minimal()
+
+Pos_Neg
+
 png("Pos_Neg.png") #Saving plot to png
 print(Pos_Neg)
 dev.off()
@@ -124,7 +174,8 @@ tw_state <- Tweets_sentiment %>%
   filter(row_number()==1) %>% 
   mutate(lon=ifelse(state=="new york",-73.935242, lon)) %>%  #change coordinates for New York State
   mutate(lat=ifelse(state=="new york",40.730610,lat)) %>% 
-  filter(!is.na(state))
+  filter(!is.na(state)) %>% 
+  left_join(State_top_words, by="state")
 
 # Polygon stuff from shape file
 #install.packages("tigris")
@@ -134,15 +185,18 @@ states <- states(cb=T) %>%
 
 # Use the Tigris function geo_join to bring together the states shapefile and the tw_states dataframe
 states_shape_tweets <- geo_join(states, tw_state, "name", "state")
+```
 
-
+#choropleth map of Twitter Sentiment across States 
+```{r, eval= TRUE, echo=TRUE}
 # Creating a color palette based on the number range in the total column
 pal <- colorNumeric("YlOrRd", domain=states_shape_tweets$Avg.Sentiment)
 
 # Setting up the pop up text
 popup_sb <- paste0("State: ", as.character(states_shape_tweets$NAME),"<br/>",
                   "Average Sentiment Score: ", as.character(states_shape_tweets$Avg.Sentiment),"<br/>",
-                 "Total Word Count: ",as.character(states_shape_tweets$WordCounts),"<br/>")
+                  "Total Word Count: ",as.character(states_shape_tweets$WordCounts),"<br/>",
+                  "Top Words: ",as.character(states_shape_tweets$Terms),"<br/>")
 
 # Mapping it with the new tiles CartoDB.Positron
 leaflet() %>%
@@ -175,14 +229,101 @@ leaflet() %>%
 
 ```
 
-#Map Word counts by state 
-```{r, echo=FALSE}
+#Get Locations of Elite/ Selective Schools
+```{r, echo=FALSE, warning=FALSE}
+Schools <- read_csv('~/Documents/GitHub/DataVisualization/Group_G_HigherEd/src/2010_2019_student_debt.csv') %>% 
+  select(INSTNM, CITY,LATITUDE, LONGITUDE, ADM_RATE) %>% 
+  filter(!is.na(ADM_RATE))
 
-leaflet(states_shape_tweets) %>%
+SelSchools <-Schools %>% 
+  mutate(Selectivity = case_when(
+    ADM_RATE < 0.1 ~ 'elite',
+    ADM_RATE < 0.2 ~ 'highly selective',
+    ADM_RATE < 0.3 ~ 'selective',
+    ADM_RATE < 0.7 ~ 'less selective',
+    TRUE ~ 'not selective')) %>% 
+  filter(Selectivity %in% c('elite', 'highly selective','selective'), !is.na(LONGITUDE)) %>% 
+  distinct(INSTNM, .keep_all=TRUE) 
+  
+```
+
+
+#Twitter Sentiment Map & Institutions'Location Map
+```{r, echo=FALSE}
+# Creating a color palette based on the number range in the total column
+ppal <- colorNumeric("RdYlGn", domain=states_shape_tweets$Avg.Sentiment)
+
+# Creating a color palette based on Selectivity of schools
+ppal2 <- colorFactor("RdYlBu", domain=SelSchools$Selectivity)
+color_Selectivity = ppal2(SelSchools$Selectivity)
+icon.pop <- pulseIcons(color = ifelse(SelSchools$Selectivity == "elite", "#E64141", 
+                                      ifelse(SelSchools$Selectivity =="highly selective", "#F9C874", "#97D6FF")),
+                       heartbeat = ifelse(SelSchools$Selectivity == "elite", "0.5", 
+                                      ifelse(SelSchools$Selectivity =="highly selective", "0.7", "0.8")))
+
+# Setting up the pop up text
+popup_sb <- paste0("State: ", as.character(states_shape_tweets$NAME),"<br/>",
+                  "Average Sentiment Score: ", as.character(states_shape_tweets$Avg.Sentiment),"<br/>",
+                  "Total Word Count: ",as.character(states_shape_tweets$WordCounts),"<br/>",
+                  "Top Words: ",as.character(states_shape_tweets$Terms),"<br/>")
+
+popup_sb2 <- paste0("University: ", as.character(SelSchools$INSTNM),
+                  ";  City: ", as.character(SelSchools$CITY),
+                  ";  Admission Rate: ",as.character(SelSchools$ADM_RATE))
+
+# Map
+map_title2 <- tags$p(tags$style('p {color: black; font-size: 15px}'),
+                    tags$b('#CancelStudentDebt Tweets in the US'))
+
+leaflet() %>%
   addTiles('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', 
     attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>') %>%
-  addCircles(lng = ~lon, lat = ~lat, weight = 2,
-    radius = ~WordCounts*3.3, popup=~popup_sb,color="#E871E0", stroke = TRUE, fillOpacity = 0.8) 
+  # Add Institution Data
+  addPulseMarkers(data = SelSchools,
+             lng= ~LONGITUDE, lat = ~LATITUDE,
+             icon = icon.pop,
+             label = popup_sb2,
+             group = 'Selective Institutions') %>%
+  # addCircles(data = SelSchools,
+  #            lng = ~LONGITUDE, lat = ~LATITUDE,
+  #            popup=popup_sb2,
+  #            color=color_Selectivity,
+  #            group = 'Selective Institutions') %>% 
+  addLegend(position = 'bottomright',
+            title = 'Selectivity',
+            pal = ppal2, 
+            values = SelSchools$Selectivity,
+            opacity = 0.7) %>% 
+  addCircles(data= states_shape_tweets,
+             lng = ~lon, lat = ~lat, 
+             weight = 2,
+             radius = states_shape_tweets$WordCounts*2.8, 
+             popup=~popup_sb, 
+             color=~ppal(states_shape_tweets$Avg.Sentiment), 
+             stroke = TRUE, 
+             group = 'Twitter Sentiments',
+             fillOpacity = 0.8) %>% 
+  addLegend(position = "bottomright",
+            title = "Average Sentiment Score", 
+            pal = ppal, 
+            values = states_shape_tweets$Avg.Sentiment, 
+            opacity = 0.7) %>% 
+  addLayersControl(baseGroups = c('Twitter Sentiments', 'Selective Institutions'),
+                   options = layersControlOptions(collapsed = FALSE), 
+                   position = 'bottomright') %>%
+  #Add Map Title
+  addControl(map_title2, 
+             position = 'topright') %>% 
+  addResetMapButton() %>%
+  #Add Search 
+  addSearchFeatures(
+    targetGroups = "Selective Institutions",
+    options = searchFeaturesOptions(
+      propertyName = "INSTNM", zoom = 18, openPopup = TRUE, firstTipSubmit = TRUE,
+      autoCollapse = TRUE, hideMarkerOnCollapse = TRUE )) %>%
+  addControl("<P>Search for Universities<br/>in US by name.</P>",
+             position = "bottomleft")
+
 ```
 
 
