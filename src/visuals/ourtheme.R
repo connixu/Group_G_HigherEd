@@ -1,5 +1,4 @@
-#library(ggplot2)
-ourtheme <- theme(text = element_text(family = "sansserif"),
+ourtheme <- ggplot2::theme(text = element_text(family = "sansserif"),
                   panel.background = element_blank(),
                   legend.position = "bottom",
                   axis.ticks = element_blank(),
