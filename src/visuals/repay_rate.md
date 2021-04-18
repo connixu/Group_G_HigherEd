@@ -97,16 +97,17 @@ sc_repay %>%
   geom_line() + geom_point() +
   
   # labels
-  ggtitle("Fraction of Fiscal Cohorts by Family Income Bracket\nwhose Loan Balances Declined in their\nFirst Year of Repayment") +
-  xlab("\nCohort Year") + ylab("Average Fraction of Fiscal Cohort\n") + guides(alpha = FALSE) +
-  scale_color_brewer(name = "Family Income:", palette = "greens", direction = -1) +
+  ggtitle("Cohort Performance in First Year of Repayment") +
+  xlab("\nFiscal Cohort Year") + ylab("Average Proportion of Fiscal Cohort\nto Decline Loan Balance\n") +
+  labs(caption = "\n*Fiscal Cohort: group of students who begin repaying their loans in the same year") +
+  scale_color_brewer(name = "Family Income:", palette = "greenScale", direction = -1) +
   scale_y_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
   scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1)) +
   ourtheme
 ```
 
 ```
-## Warning in pal_name(palette, type): Unknown palette greens
+## Warning in pal_name(palette, type): Unknown palette greenScale
 ```
 
 ```
