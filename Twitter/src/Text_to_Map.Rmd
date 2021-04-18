@@ -254,12 +254,12 @@ SelSchools <-Schools %>%
 ppal <- colorNumeric("RdYlGn", domain=states_shape_tweets$Avg.Sentiment)
 
 # Creating a color palette based on Selectivity of schools
-ppal2 <- colorFactor("RdYlBu", domain=SelSchools$Selectivity)
+ppal2 <- colorFactor(palette = c("purple", "green", "blue"), 
+               levels = c("Public", "Private", "For-Profit"))
+
 color_Selectivity = ppal2(SelSchools$Selectivity)
 icon.pop <- pulseIcons(color = ifelse(SelSchools$Selectivity == "elite", "#E64141", 
-                                      ifelse(SelSchools$Selectivity =="highly selective", "#F9C874", "#97D6FF")),
-                       heartbeat = ifelse(SelSchools$Selectivity == "elite", "0.5", 
-                                      ifelse(SelSchools$Selectivity =="highly selective", "0.7", "0.8")))
+                                      ifelse(SelSchools$Selectivity =="highly selective", "#F9C874", "#97D6FF")))
 
 # Setting up the pop up text
 popup_sb <- paste0("State: ", as.character(states_shape_tweets$NAME),"<br/>",
@@ -267,33 +267,62 @@ popup_sb <- paste0("State: ", as.character(states_shape_tweets$NAME),"<br/>",
                   "Total Word Count: ",as.character(states_shape_tweets$WordCounts),"<br/>",
                   "Top Words: ",as.character(states_shape_tweets$Terms),"<br/>")
 
-popup_sb2 <- paste0("University: ", as.character(SelSchools$INSTNM),
-                  ";  City: ", as.character(SelSchools$CITY),
-                  ";  Admission Rate: ",as.character(SelSchools$ADM_RATE))
+popup_sb2 <- paste0("University: ", as.character(SelSchools$INSTNM),"<br/>",
+                  "City: ", as.character(SelSchools$CITY),"<br/>",
+                  "Admission Rate: ",as.character(SelSchools$ADM_RATE))
+
+getColor <- function(SelSchools) {
+  sapply(SelSchools$ADM_RATE, function(ADM_RATE) {
+  if(ADM_RATE <= 0.1) {
+    "purple"
+  } else if(ADM_RATE <= 0.2) {
+    "green"
+  } else {
+    "blue"
+  } })
+}
+
+icons <- awesomeIcons(
+  icon = 'ios-close',
+  iconColor = 'black',
+  library = 'ion',
+  markerColor = getColor(SelSchools)
+)
+
 
 # Map
 map_title2 <- tags$p(tags$style('p {color: black; font-size: 15px}'),
                     tags$b('#CancelStudentDebt Tweets in the US'))
 
 leaflet() %>%
+  setView(-98.483330, 38.712046, zoom = 4) %>% 
+#Base Group
+  addTiles(group = "OSM (default)") %>%
   addTiles('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', 
-    attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>') %>%
+    attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>', group = "Dark") %>%
+#Overlay Group  
   # Add Institution Data
-  addPulseMarkers(data = SelSchools,
-             lng= ~LONGITUDE, lat = ~LATITUDE,
-             icon = icon.pop,
-             label = popup_sb2,
-             group = 'Selective Institutions') %>%
+  # addPulseMarkers(data = SelSchools,
+  #            lng= ~LONGITUDE, lat = ~LATITUDE,
+  #            icon = icon.pop,
+  #            label = popup_sb2,
+  #            group = 'Selective Institutions') %>%
   # addCircles(data = SelSchools,
   #            lng = ~LONGITUDE, lat = ~LATITUDE,
   #            popup=popup_sb2,
+  #            radius = SelSchools$ADM_RATE*400, 
   #            color=color_Selectivity,
-  #            group = 'Selective Institutions') %>% 
-  addLegend(position = 'bottomright',
-            title = 'Selectivity',
-            pal = ppal2, 
-            values = SelSchools$Selectivity,
-            opacity = 0.7) %>% 
+  #            group = 'Selective Institutions') %>%
+  addAwesomeMarkers(data = SelSchools,
+                    lng = ~LONGITUDE, lat = ~ LATITUDE, 
+                    icon= icons, 
+                    popup = popup_sb2, 
+                    group = 'Selective Institutions') %>% 
+  # addLegend(position = 'bottomright',
+  #           title = 'Selectivity',
+  #           pal = ppal2, 
+  #           values = SelSchools$Selectivity,
+  #           opacity = 0.7) %>% 
   addCircles(data= states_shape_tweets,
              lng = ~lon, lat = ~lat, 
              weight = 2,
@@ -302,13 +331,14 @@ leaflet() %>%
              color=~ppal(states_shape_tweets$Avg.Sentiment), 
              stroke = TRUE, 
              group = 'Twitter Sentiments',
-             fillOpacity = 0.8) %>% 
+             fillOpacity = 1) %>% 
   addLegend(position = "bottomright",
             title = "Average Sentiment Score", 
             pal = ppal, 
             values = states_shape_tweets$Avg.Sentiment, 
             opacity = 0.7) %>% 
-  addLayersControl(baseGroups = c('Twitter Sentiments', 'Selective Institutions'),
+  addLayersControl(baseGroups = c("OSM (default)", "Dark"),
+                   overlayGroups = c('Twitter Sentiments', 'Selective Institutions'),
                    options = layersControlOptions(collapsed = FALSE), 
                    position = 'bottomright') %>%
   #Add Map Title
