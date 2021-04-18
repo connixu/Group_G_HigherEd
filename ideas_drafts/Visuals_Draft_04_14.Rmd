@@ -129,11 +129,8 @@ sc_dt %>%
         type="index",
         fontsize.labels=c(12, 8), 
         palette =  viridis(5),
-        fontfamily.title = "Arial Narrow",
-        fontfamily.labels = "Arial Narrow",
         border.col="white",
-        title = 'Top 10 Parking Violations in NYC by Frequency of Occurrence'
-  )
+        title = 'Universities and Selectivity')
 ```
 
 
@@ -297,7 +294,7 @@ sc_time_2019 <- sc_time %>% subset(Year_Ending = 2019) %>%
 
 # States 
 states_2019 <- states %>% 
-  inner_join(sc_time_2019_state, by=c(STUSPS='STABBR')) 
+  inner_join(sc_time_2019, by=c(STUSPS='STABBR')) 
 
 
 library(leaflet.providers)
@@ -309,6 +306,10 @@ pal = colorFactor('Greens', domain = states_2019$`Average Student Loans`)
 pop_pop <- paste("State:",states_2019$NAME,"<br/>",
                  "Average Student Loans","<br/>",
                  "of Schools Located in State:",paste('$',round(states_2019$`Average Student Loans`)))
+library(htmlwidgets)
+library(htmltools)
+states_2019_title <- tags$p(tags$style('p{color:gray; font-size: 14px; family: serif}'),
+                            tags$b('Average Debt By State (2019)'))
 
 leaflet(states_2019) %>% addProviderTiles("CartoDB.Positron") %>%
   addPolygons(fillColor = ~pal(states_2019$`Average Student Loans`),
@@ -324,7 +325,7 @@ leaflet(states_2019) %>% addProviderTiles("CartoDB.Positron") %>%
                      labels = c(paste('$',round(min(states_2019$`Average Student Loans`)))," "," "," ", 
                                 paste('$',round(max(states_2019$`Average Student Loans`)))),
             title = "Average Student Loans (Per Student)") %>%
-  leaflet::setView(-98.5795, 39.8282, zoom=3)
+  leaflet::setView(-98.5795, 39.8282, zoom=3) %>% addControl(states_2019_title, position='topright')
 ?addLegend
 ```
 
@@ -371,8 +372,13 @@ sc_time
 
 The code chunk below has not been touched and includes Shiny code for later use. 
 ```{r}
-setwd('~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd/')
+setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd")
 sc_time <- read_csv('src/2010_2019_student_debt.csv') 
+sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
+  transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+  dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) %>% 
+  mutate(DEBT_MDN_STUDENT = DEBT_MDN*UGDS)
+sc_time
 
 library(reshape2)
 library(shiny)
@@ -388,45 +394,39 @@ ui <- fluidPage(
 
 server <- function(input, output, session){
   # Render plot of top 10 most popular names
-    sc_time_selective <- reactive({
-      sc_time %>% 
-        dplyr::filter(Year_Ending == input$year) %>% 
-        dplyr::filter(DEBT_MDN !='PrivacySuppressed') %>%
-        transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
-        dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) %>%
-        mutate(DEBT_MDN_STUDENT = DEBT_MDN*UGDS) %>% 
-        group_by(STABBR) %>% 
-        mutate(`Average Student Loans`=sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% 
-        dplyr::rename(lat = LATITUDE) %>% 
-        dplyr::rename(long = LONGITUDE) %>% 
-        dplyr::rename(state = STABBR) %>%
-        filter(ADM_RATE < 0.3) %>% 
-        dplyr::mutate(uni_rank = case_when(
-          ADM_RATE < 0.05 ~ 'elite',
-          ADM_RATE < 0.2 ~ 'highly selective',
-          TRUE ~ 'selective'))
-      })
-    
-
+    sc_time_selective <- reactive({sc_time %>% subset(Year_Ending == input$year) %>% 
+        group_by(STABBR) %>% mutate(`Average Student Loans`=sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>%
+        group_by(STABBR,`Average Student Loans`) %>% summarize()})
+    library(tigris)
+    states <- states(cb = TRUE)
+    states_year <- reactive({states %>% inner_join(sc_time_selective(), by=c(STUSPS='STABBR'))}) 
     
   output$studentdebtmap <- renderLeaflet({
-    content <- paste(
-      "School",sc_time_selective$INSTNM,"<br/>",
-      "Number of Undergrads:",sc_time_selective$UGDS,"<br/>",
-      "Selectivity:", sc_time_selective$uni_rank,"<br/>",
-      "Median Debt:",paste('$',round(sc_time_selective$DEBT_MDN,2)),"<br/>",
-      "Year",sc_time_selective$`Year_Ending`)
+    pal = colorFactor('Greens', domain = states_year()$`Average Student Loans`)
+    pop_pop <- paste("State:",states_year()$NAME,"<br/>",
+                     "Average Student Loans","<br/>", "of Schools Located in State:",
+                     paste('$',round(states_year()$`Average Student Loans`)))
     
-    leaflet (sc_time) %>% addTiles('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png') %>%
-      addCircles(col = ~pal1(sc_time$uni_rank),
-                 radius = ~DEBT_MDN,
-                 popup = content,
-                 fillOpacity = 0.7) %>%
-      leaflet::addLegend(position = "bottomleft",pal = pal1, values = sc_time$uni_rank,
-                         title = "Average Student Loans (Per Student)")
+    sc_time_selective_title <- tags$p(tags$style('p{color:gray; font-size: 14px; family: serif}'),
+                            tags$b('Average Debt By State (2019)'))
+    leaflet(states_year()) %>% addProviderTiles("CartoDB.Positron") %>%
+      addPolygons(fillColor = ~pal(states_year()$`Average Student Loans`),
+                  color = "white",
+                  weight = 0.5,
+                  fillOpacity = 0.7,  
+              highlight = highlightOptions(
+                weight = 5,
+                color = "#666",
+                fillOpacity = 0.7,
+                bringToFront = TRUE,
+                ),popup=pop_pop) %>% addLegend(position = "bottomleft", colors =c("#EDF8E9","#BAE4B3","#74C476","#31A354","#006D2C"), 
+                     labels = c(paste('$',round(min(states_year()$`Average Student Loans`)))," "," "," ", 
+                                paste('$',round(max(states_year()$`Average Student Loans`)))),
+            title = "Average Student Loans (Per Student)") %>%
+  leaflet::setView(-98.5795, 39.8282, zoom=3) %>% addControl(sc_time_selective_title, position='topright')
     })
     observe({
-    leafletProxy("studentdebtmap", data = sc_time_selective())
+    leafletProxy("studentdebtmap", data = states_year())
   }) 
 }
 
