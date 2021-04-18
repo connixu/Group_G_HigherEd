@@ -88,7 +88,7 @@ ShortPuBuGn <- c("#D0D1E6","#A6BDDB","#67A9CF","#3690C0","#02818A")
 m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
               ggplot(., aes(x=ADM_RATE, y=DEBT_MDN,color=uni_rank)) +
   geom_point(pch=21) +
-  geom_smooth(color='#EA4F88', se = FALSE) +
+  geom_smooth(color='navy', se = FALSE) +
   scale_color_manual(values=ShortPuBuGn)+
   theme(
     panel.grid.major = element_blank(),
@@ -224,9 +224,9 @@ p <- sc_time_df %>%
     panel.grid.minor = element_blank(),
     panel.background= element_rect(fill="white")) +
   scale_x_continuous(breaks = round(seq(min(sc_time$Year_Ending), max(sc_time$Year_Ending), by = 2),1)) +
-  labs(x='', y='Median Loan Amount per Student\n(thousands)**', 
+  labs(x='', y='Inflation-Adjusted Median Loan Amount per Student\n(thousands)', 
        title='Student Debt Has Been Rising Over The Years',
-       color='',fill='', caption='**-inflation adjusted')
+       color='',fill='',group='')
 ggplotly(p)
 
 
@@ -303,7 +303,8 @@ leaflet(states_2019) %>% addProviderTiles("CartoDB.Positron") %>%
                 ),popup=pop_pop) %>%
   leaflet::addLegend(position = "bottomleft", pal = pal, values = c(paste('$',round(min(states_2019$`Average Student Loans`))), 
                                                           paste('$',round(max(states_2019$`Average Student Loans`)))),
-            title = "Average Student Loans (Per Student)") %>%   setView(-98.5795, 39.8282, zoom=3)
+            title = "Average Student Loans (Per Student)") %>%
+  leaflet::setView(-98.5795, 39.8282, zoom=3)
 ?addLegend
 ```
 
@@ -342,43 +343,82 @@ leaflet(sc_time_2019_selective) %>% addTiles('http://{s}.basemaps.cartocdn.com/d
             title = "Average Student Loans (Per Student)")
 ?addLegend
 ```
-
+```{r}
+setwd('~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd/')
+sc_time <- read_csv('src/2010_2019_student_debt.csv') 
+sc_time
+```
 
 The code chunk below has not been touched and includes Shiny code for later use. 
 ```{r}
+setwd('~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd/')
+sc_time <- read_csv('src/2010_2019_student_debt.csv') 
+
 library(reshape2)
 library(shiny)
 ui <- fluidPage(
-    sidebarLayout(
-        sidebarPanel(
-            p
-        ),
-        
-        mainPanel(
-            width = 9,
-            h2("Link to a saved sample.html"),
-            p("The url is https://johndoe.github.io/samples/sample.html"),
-            a(h3("Lovely Birds"),
-              href = "https://johndoe.github.io/samples/sample.html",
-              target = "blank"),
-            hr(),
-            h2("Text and image example", id = "birds"),
-            fluidRow(
-                column(
-                    7,
-                    includeMarkdown("markdown/birds.Rmd")
-                ),
-                column(
-                    5,
-                    img(src = "birds.png", width = "100%")
-                )
-            ),
-        )
-    )
+  titlePanel("I love Graphs about Student Debt"),
+  # CODE BELOW: Add select input named "sex" to choose between "M" and "F"
+  selectInput('year',
+  'Year',
+  choices=c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)), 
+  # Add plot output to display top 10 most popular names
+  leafletOutput("studentdebtmap")
 )
 
+server <- function(input, output, session){
+  # Render plot of top 10 most popular names
+    sc_time_selective <- reactive({
+      sc_time %>% 
+        dplyr::filter(Year_Ending == input$year) %>% 
+        dplyr::filter(DEBT_MDN !='PrivacySuppressed') %>%
+        transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+        dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) %>%
+        mutate(DEBT_MDN_STUDENT = DEBT_MDN*UGDS) %>% 
+        group_by(STABBR) %>% 
+        mutate(`Average Student Loans`=sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% 
+        dplyr::rename(lat = LATITUDE) %>% 
+        dplyr::rename(long = LONGITUDE) %>% 
+        dplyr::rename(state = STABBR) %>%
+        filter(ADM_RATE < 0.3) %>% 
+        dplyr::mutate(uni_rank = case_when(
+          ADM_RATE < 0.05 ~ 'elite',
+          ADM_RATE < 0.2 ~ 'highly selective',
+          TRUE ~ 'selective'))
+      })
+    
+
+    
+  output$studentdebtmap <- renderLeaflet({
+    content <- paste(
+      "School",sc_time_selective$INSTNM,"<br/>",
+      "Number of Undergrads:",sc_time_selective$UGDS,"<br/>",
+      "Selectivity:", sc_time_selective$uni_rank,"<br/>",
+      "Median Debt:",paste('$',round(sc_time_selective$DEBT_MDN,2)),"<br/>",
+      "Year",sc_time_selective$`Year_Ending`)
+    
+    leaflet (sc_time) %>% addTiles('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png') %>%
+      addCircles(col = ~pal1(sc_time$uni_rank),
+                 radius = ~DEBT_MDN,
+                 popup = content,
+                 fillOpacity = 0.7) %>%
+      leaflet::addLegend(position = "bottomleft",pal = pal1, values = sc_time$uni_rank,
+                         title = "Average Student Loans (Per Student)")
+    })
+    observe({
+    leafletProxy("studentdebtmap", data = sc_time_selective())
+  }) 
+}
+
+shinyApp(ui = ui, server = server)
 
 ```
 
-
+```{r}
+ui <- fluidPage(
+  titlePanel('The Cost of Higher Education: An Exploration of Student Debt in American Universities')
+  
+)
+ 
+```
 
