@@ -1,11 +1,36 @@
-# Group_G_HigherEd
-Data Viz group project on Higher Education.
 
-## Names | Emails
+# Group Project - Group_G_HigherEd
+
+Term: Spring 2021
+
+## Team
 - Ariel (Zhirui) Luo | zl2965@columbia.edu
+
 - Arielle Herman | a.herman@columbia.edu
+
 - Connie (Ye) Xu | yx2625@columbia.edu
+
 - Grace (Xuejing) Li | xl2673@columbia.edu
+
+
+## Repo Map
+
+### src/
+	├── data
+	├── solutions
+	├── visualizations
+### reports/
+	├── documents
+	├── figures
+### references/
+
+
+## Project Description: 
+
+
+## Framework of Solution:
+
+
 
 ## Important Links
 ### Potential Datasets
@@ -16,4 +41,4 @@ Data Viz group project on Higher Education.
 - [meeting notes](https://docs.google.com/document/d/1QgpVCZkyFSZYQU7PL0Vgf8Nl1bISBuN41Yo3HjtgKvI/edit)
 
 ### [Proposal](https://github.com/QMSS-G5063-2021/Group_G_HigherEd/tree/main/proposal)
-
+### [Presentation](https://www.canva.com/design/DAEbgBTMGTE/share/preview?token=whgxMt8Kq9nJ9iJgibDudQ&role=EDITOR&utm_content=DAEbgBTMGTE&utm_campaign=designshare&utm_medium=link&utm_source=sharebutton)

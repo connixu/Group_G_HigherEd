@@ -64,6 +64,16 @@ sc <- sc %>% dplyr::rename(lat = LATITUDE) %>% dplyr::rename(long = LONGITUDE) %
 #recoding for admissions rates (ADM_RATE) to note selectivity level of schools
 sc <- sc %>% dplyr::mutate(uni_rank = ifelse(ADM_RATE<0.05,'elite',ifelse(ADM_RATE<0.2,'highly selective', ifelse(ADM_RATE<0.3, 'selective',ifelse(ADM_RATE<0.7,'less selective', 'not selective')))))
 colnames(sc)
+
+# Selectivity Categories were made guided by as-yet unpublished work from Conwell et al. (2022 exp.) [1] as well as by articles from the US News and Rankings 
+sc <- sc %>%
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.05 ~ 'elite',
+    ADM_RATE < 0.2 ~ 'highly selective',
+    ADM_RATE < 0.3 ~ 'more selective',
+    ADM_RATE < 0.5 ~ 'selective',
+    ADM_RATE < 0.7 ~ 'less selective',
+    TRUE ~ 'not selective')) %>% mutate(uni_rank = factor(uni_rank, levels=c('not selective', 'less selective', 'selective', 'more selective', 'highly selective', 'elite')))
 ```
 
 
@@ -87,20 +97,6 @@ colnames(sc)
 | School                   | Same as INSTNM (disregard - used to filter out community colleges) | 
 | ADM_RATE_ALL_1           | Admission Rate by OPE ID (not used in the end)            | 
 | Year, Year_Starting, Year_Ending | Year Starting (twice due to how the data was read in) and Year Ending period covered by the scorecard | 
-
-### Additional Filtering / Column Mutation
-
-```{r}
-# Selectivity Categories were made guided by as-yet unpublished work from Conwell et al. (2022 exp.) [1] as well as by articles from the US News and Rankings 
-sc <- sc %>%
-  dplyr::mutate(uni_rank = case_when(
-    ADM_RATE < 0.05 ~ 'elite',
-    ADM_RATE < 0.2 ~ 'highly selective',
-    ADM_RATE < 0.3 ~ 'more selective',
-    ADM_RATE < 0.5 ~ 'selective',
-    ADM_RATE < 0.7 ~ 'less selective',
-    TRUE ~ 'not selective')) %>% mutate(uni_rank = factor(uni_rank, levels=c('not selective', 'less selective', 'selective', 'more selective', 'highly selective', 'elite')))
-```
 
 ## Preliminary (Very Rough) Drafts - Searching for Trends 
 

@@ -6,7 +6,9 @@ output: html_notebook
 ---
 
 ```{r setup, include=FALSE}
+setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd/src/visuals/")
 knitr::opts_chunk$set(echo = TRUE)
+source("ourtheme.R")
 ```
 
 ```{r packages, echo=FALSE, eval=TRUE, warning=FALSE, message=FALSE}
@@ -42,10 +44,18 @@ suppressMessages(install.packages('rgeos'))
 
 suppressMessages(library(devtools))
 # Let's install the development version from Github. Run
-suppressMessages(devtools::install_github("rstudio/leaflet"))
+devtools::install_github("rstudio/leaflet")
 ```
 
 ```{r import general data, echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE}
+# Set the WD as Group_G_HigherEd 
+setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd")
+
+# While our initial College Scorecard only included 2019 initially, I was able to run a simple python script to concatenate and select a small number of relevant columns for our visualization and analysis. Thus, as our first visualizations only unclude 2019, the code below is for re-filtering the concatenated 2010-2019 data back into simply 2019. 
+
+sc_time <- read_csv('src/2010_2019_student_debt.csv') 
+sc <- sc_time %>% filter(Year_Ending == 2019)
+
 library(educationdata)
 # Test Run with using get_education_data 
 # data <- get_education_data(level = "college-university",
@@ -53,20 +63,16 @@ library(educationdata)
 #     topic = "directory",
 #     filters = list(year = 2019))
 # data
-
 # Scorecard data - 2019 
-sc <- read_csv('2019_College_Scorecard_Valid_Admissions_Data.csv')
-sc
 
 ## change projection of sc data
 sc <- sc %>%
   dplyr::mutate(uni_rank = case_when(
-    ADM_RATE < 0.05 ~ 'elite',
-    ADM_RATE < 0.2 ~ 'highly selective',
+    ADM_RATE < 0.2 ~ 'highly selective/elite',
     ADM_RATE < 0.3 ~ 'more selective',
     ADM_RATE < 0.5 ~ 'selective',
     ADM_RATE < 0.7 ~ 'less selective',
-    TRUE ~ 'not selective')) %>% mutate(uni_rank = factor(uni_rank, levels=c('not selective', 'less selective', 'selective', 'more selective', 'highly selective', 'elite')))
+    TRUE ~ 'not selective')) %>% mutate(uni_rank = factor(uni_rank, levels=c('not selective', 'less selective', 'selective', 'more selective', 'highly selective/elite')))
 ```
 
 ## Simple Scattergram 
@@ -76,21 +82,26 @@ First we are going to try to present this pattern for different tiers of univers
 # Remove PrivacySuppressed Records and transform Debt Median into a numeric value - we can also do this on the main sc df
 sc$DEBT_MDN[is.na(sc$DEBT_MDN)] <- 0;
 
+brewer.pal(n=10,"PuBuGn")
+ShortPuBuGn <- c("#D0D1E6","#A6BDDB","#67A9CF","#3690C0","#02818A")
+
 m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
               ggplot(., aes(x=ADM_RATE, y=DEBT_MDN,color=uni_rank)) +
-  geom_point() +
+  geom_point(pch=21) +
   geom_smooth(color='#EA4F88', se = FALSE) +
-  theme_ipsum(base_size = 10, axis_title_size = 12, plot_title_size=14) +
-  scale_color_viridis_d()+
+  scale_color_manual(values=ShortPuBuGn)+
   theme(
     panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()) +
+    panel.grid.minor = element_blank(),
+    panel.background= element_rect(fill="white")) +
   scale_y_discrete(limits=c(0,10000,20000,30000), labels=c('0','10','20','30')) +
   labs(x='Admissions Rate', y='Median Loan Amount per Student\n(thousands)', 
        title='Student Debt and Admissions Rate',
        color='Selectivity')
 m
 ```
+
+This is a data table showing the breakdown of the university ranks (as I chose to rank them). I will note that from the dt alone wwe are seeing a downward trend in the 'Median Student Loans' column. 
 ```{r, echo=TRUE, eval=TRUE}
 # Create Data Table (Summarized) for 
 library('scales')
@@ -107,19 +118,18 @@ table
 
 ```
 
-
 ## Scattergram as Violin Plot
 ```{r, echo=TRUE, eval=TRUE}
 m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
   ggplot(., aes(x=uni_rank, y=DEBT_MDN)) +
   geom_violin(aes(fill=uni_rank,color=uni_rank)) +
   geom_boxplot(width = 0.2)+
-  theme_ipsum(base_size = 10, axis_title_size = 12, plot_title_size=14) +
-  scale_fill_viridis_d() + 
-  scale_color_viridis_d() +
+  scale_fill_manual(values=ShortPuBuGn) +
+  scale_colour_manual(values=ShortPuBuGn) +
   theme(
     panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()) +
+    panel.grid.minor = element_blank(),
+    panel.background= element_rect(fill="white"))+
   scale_y_discrete(limits=c(0,10000,20000,30000), labels=c('0','10','20','30')) +
   scale_x_discrete(labels=c('not\nselective\n(>70%)','less\nselective\n(50%-70%)',
                             'selective\n(30%-50%)','more\nselective\n(20%-30%)','highly\nselective\n(5%-20%)','elite\n(<5%)')) +
@@ -129,6 +139,7 @@ m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.n
        color='',fill='')
 m
 ```
+Showing the previous scattergram specifically as violing plots
 
 ```{r, echo=TRUE, eval=TRUE}
 ipeds15 <- get_education_data(level = "college-university",
@@ -142,6 +153,7 @@ ipeds15
 ## Student Debt over Time
 
 ```{r, echo=TRUE, eval=TRUE}
+
 #Process the data 
 sc_time <- read_csv('2010_2019_student_debt.csv') 
 
@@ -160,10 +172,12 @@ sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>%
   transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
   dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) %>% 
   mutate(DEBT_MDN_STUDENT = DEBT_MDN*UGDS)
+sc_time
 
 sum(sc_time$UGDS,na.rm=TRUE)
 ```
 
+Below is an interactive line graph (2010-2019) which details the trends in student debt over the years. 
 ```{r, echo=TRUE, eval=TRUE}
 # CPI Inflation Rates - Got Average Yearly Inflation Rate for Scaling for Student Debt 
 install.packages('quantmod')
@@ -176,14 +190,13 @@ cf$Year_Ending <- format(as.Date(row.names(cf), format="%Y-%m-%d"),"%Y")
 # Merged for Inflation 
 sc_time_df <- sc_time %>% group_by(`Year_Ending`) %>% mutate(`Average Annual Student Debt - National` = sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% ungroup() %>% 
   dplyr::mutate(uni_rank = case_when(
-    ADM_RATE < 0.05 ~ 'elite',
-    ADM_RATE < 0.2 ~ 'highly selective',
+    ADM_RATE < 0.2 ~ 'elite/highly selective',
     ADM_RATE < 0.3 ~ 'more selective',
     ADM_RATE < 0.5 ~ 'selective',
     ADM_RATE < 0.7 ~ 'less selective',
     TRUE ~ 'not selective')) %>%
   mutate(uni_rank = factor(uni_rank, levels=c('not selective', 'less selective', 'selective', 
-                                              'more selective', 'highly selective', 'elite'))) %>%
+                                              'more selective', 'elite/highly selective'))) %>%
   group_by(uni_rank,Year_Ending) %>% 
   mutate(`Average Annual Student Debt (by Selectivity)` = sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% 
   ungroup() %>% 
@@ -196,53 +209,89 @@ sc_time_df <- sc_time %>% group_by(`Year_Ending`) %>% mutate(`Average Annual Stu
            CPIAUCSL)
 
 sc_df <- sc_time_df %>% group_by(`Average Annual Student Debt - National`,`Adjusted Average Annual Student Debt - Composite`,Year_Ending) %>% summarize() %>% mutate(uni_rank='national average') %>% mutate(`Adjusted Average Annual Student Debt`=`Adjusted Average Annual Student Debt - Composite`) %>% dplyr::mutate(`Average Annual Student Debt (by Selectivity)` = `Average Annual Student Debt - National`) %>% merge(cf) %>% select(Year_Ending,`Average Annual Student Debt (by Selectivity)`, uni_rank, `Average Annual Student Debt - National`, CPIAUCSL, `Adjusted Average Annual Student Debt`,`Adjusted Average Annual Student Debt - Composite`)
-sc_time_df <- sc_time_df %>% rbind(sc_df) %>% mutate(uni_rank = factor(uni_rank, levels=c('national average','not selective', 'less selective', 'selective', 
-                                              'more selective', 'highly selective', 'elite')))
+sc_time_df <- sc_time_df %>% rbind(sc_df) %>% mutate(uni_rank = factor(uni_rank, levels=c('national average','not selective', 'less selective', 'selective', 'more selective', 'elite/highly selective'))) %>% 
+  mutate(national = ifelse(uni_rank == 'national average', 'y','n'))
+sc_df
 sc_time_df
 
+
 p <- sc_time_df %>% 
-  ggplot(.,aes(x=Year_Ending,y=`Adjusted Average Annual Student Debt`, color=uni_rank)) + 
-  geom_point() + geom_line() + 
-  theme_ipsum(base_size = 10, axis_title_size = 12, plot_title_size=14) +
-  scale_color_viridis_d()+
+  ggplot(.,aes(x=Year_Ending,y=`Adjusted Average Annual Student Debt`, color=uni_rank, group=national)) + 
+  geom_point() + geom_line(aes(linetype=national)) + 
+  scale_color_manual(values=c('grey',"#D0D1E6","#A6BDDB","#67A9CF","#3690C0","#02818A"))+
   theme(
     panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank()) +
+    panel.grid.minor = element_blank(),
+    panel.background= element_rect(fill="white")) +
   scale_x_continuous(breaks = round(seq(min(sc_time$Year_Ending), max(sc_time$Year_Ending), by = 2),1)) +
-  labs(x='', y='Median Loan Amount per Student\n(thousands)', 
+  labs(x='', y='Median Loan Amount per Student\n(thousands)**', 
        title='Student Debt Has Been Rising Over The Years',
-       color='',fill='')
+       color='',fill='', caption='**-inflation adjusted')
 ggplotly(p)
-
-fig1 <- sc_time_df %>% plot_ly(x = ~Year_Ending, y = ~`Adjusted Average Annual Student Debt`, type = 'scatter',
-  color = ~uni_rank, alpha=0.8, hovertemplate = 'Average Debt/Student (USD): %{y}% <extra></extra>') %>% add_lines(x = ~Year_Ending,y = ~`Adjusted Average Annual Student Debt`,line = list(color =~uni_rank)) 
-?linetype
-
-fig1
 
 
 ```
 
+The following is (instead) a bar graph with fewer 'university selectivity' buckets. 
+```{r}
+sc_time_df <- sc_time %>% group_by(`Year_Ending`) %>% mutate(`Average Annual Student Debt - National` = sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% ungroup() %>% 
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.2 ~ 'highly selective',
+    ADM_RATE < 0.5 ~ 'moderately selective',
+    TRUE ~ 'less/not at all selective')) %>%
+  mutate(uni_rank = factor(uni_rank, levels=c('less/not at all selective', 'moderately selective', 'highly selective'))) %>%
+  group_by(uni_rank,Year_Ending) %>% 
+  mutate(`Average Annual Student Debt (by Selectivity)` = sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  group_by(`Year_Ending`,`Average Annual Student Debt (by Selectivity)`,
+           uni_rank,`Average Annual Student Debt - National`) %>% summarize() %>% 
+  merge(cf) %>% 
+  mutate(`Adjusted Average Annual Student Debt` = `Average Annual Student Debt (by Selectivity)`/
+           CPIAUCSL) %>% 
+  mutate(`Adjusted Average Annual Student Debt - Composite` = `Average Annual Student Debt - National`/
+           CPIAUCSL)
 
-```{r, echo=TRUE, eval=TRUE }
+sc_df <- sc_time_df %>% group_by(`Average Annual Student Debt - National`,`Adjusted Average Annual Student Debt - Composite`,Year_Ending) %>% summarize() %>% mutate(uni_rank='national average') %>% mutate(`Adjusted Average Annual Student Debt`=`Adjusted Average Annual Student Debt - Composite`) %>% dplyr::mutate(`Average Annual Student Debt (by Selectivity)` = `Average Annual Student Debt - National`) %>% merge(cf) %>% select(Year_Ending,`Average Annual Student Debt (by Selectivity)`, uni_rank, `Average Annual Student Debt - National`, CPIAUCSL, `Adjusted Average Annual Student Debt`,`Adjusted Average Annual Student Debt - Composite`)
+sc_time_df <- sc_time_df %>% rbind(sc_df) %>% mutate(uni_rank = factor(uni_rank, levels=c('national average','less/not at all selective', 'moderately selective', 'highly selective'))) 
+
+fig1 <- sc_time_df %>% plot_ly(x = ~Year_Ending, y = ~`Adjusted Average Annual Student Debt`, type = 'bar',
+  color = ~uni_rank, alpha=0.8, hovertemplate = 'Average Debt/Student (USD): %{y} <extra></extra>',colors='Purples') %>% 
+  layout(yaxis = list(
+  title = "Average Annual Student Debt per Student\n(Adjusted for Inflation)"))
+
+fig1
+
+```
+
+Chloropleth showing average student debt (this is only 2019 but I have a filter at the beginning that will allow me to incorporate a slider for the year).
+
+```{r Student Debt map - Chloropleth, echo=TRUE, eval=TRUE }
 # Additions of States df from Tigris File 
 library(tigris)
 states <- states(cb = TRUE)
-sc_time
-sc_time_year <- sc_time %>% group_by()
+
+# Can change to sc_time_year 
+sc_time_2019 <- sc_time %>% subset(Year_Ending = 2019) %>% 
+  group_by(STABBR) %>% mutate(`Average Student Loans`=sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE))
+sc_time_2019_state <- sc_time_2019 %>% group_by(STABBR,`Average Student Loans`) %>% summarize()
 
 # States 
-states_10 <- states %>% 
-  inner_join(sc_time, by=c(STUSPS='STABBR')) 
+states_2019 <- states %>% 
+  inner_join(sc_time_2019_state, by=c(STUSPS='STABBR')) 
 
 
-popup1 <- paste("State:",states$NAME,"<br/>",
-                 "Population:",states$population,"<br/>",
-                 "Successful Projects / Population:",states$scaled_success,"<br/>")
-
+library(leaflet.providers)
+library(leaflet)
 #used 'success' measures. 
-m <- leaflet(states) %>% addProviderTiles("CartoDB.Positron") %>%
-  addPolygons(fillColor = ~pal(states$scaled_success),
+
+pal = colorFactor(ShortPuBuGn, domain = states_2019$`Average Student Loans`)
+states_2019
+pop_pop <- paste("State:",states_2019$NAME,"<br/>",
+                 "Average Student Loans","<br/>",
+                 "of Schools Located in State:",paste('$',round(states_2019$`Average Student Loans`)))
+
+leaflet(states_2019) %>% addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(fillColor = ~pal(states_2019$`Average Student Loans`),
               color = "white",
               weight = 0.5,
               fillOpacity = 0.7,  
@@ -250,65 +299,84 @@ m <- leaflet(states) %>% addProviderTiles("CartoDB.Positron") %>%
                 weight = 5,
                 color = "#666",
                 fillOpacity = 0.7,
-                bringToFront = TRUE),
-                popup=popup1) %>%
-  addLegend(position = "bottomleft",pal = pal, values = c(min(states$scaled_success),max(states$scaled_success)),title = "Successful Kickstarter Projects\n (scaled by state)") %>% 
-  setView(-98.5795, 39.8282, zoom=3)
+                bringToFront = TRUE,
+                ),popup=pop_pop) %>%
+  leaflet::addLegend(position = "bottomleft", pal = pal, values = c(paste('$',round(min(states_2019$`Average Student Loans`))), 
+                                                          paste('$',round(max(states_2019$`Average Student Loans`)))),
+            title = "Average Student Loans (Per Student)") %>%   setView(-98.5795, 39.8282, zoom=3)
+?addLegend
+```
+
+```{r}
+brewer.pal(n = 8, name = "RdYlGn")
+```
+
+```{r Student Debt Map - points, echo=TRUE, eval=TRUE }
+# last edit to sc_time_2019 in chunk above for chloropleth
+sc_time_2019_selective <- sc_time_2019 %>% dplyr::rename(lat = LATITUDE) %>% dplyr::rename(long = LONGITUDE) %>% 
+  dplyr::rename(state = STABBR) %>% filter(ADM_RATE < 0.3) %>% 
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.05 ~ 'elite',
+    ADM_RATE < 0.2 ~ 'highly selective',
+    TRUE ~ 'selective'))
+sc_time_2019_selective <- sc_time_2019_selective %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
+  transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+  dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) 
 
 
-library(dplyr)
-library(leaflet)
 
-# Fake data
-df <- data.frame(lng = c(-5, -5, -5, -5, -15, -15, -10),
-               lat = c(8, 8, 8, 8, 33, 33, 20),
-               year = c(2018, 2018, 2018, 2017, 2017, 2017, 2016),
-               stringsAsFactors = FALSE)
+pal1 = colorFactor(ShortPuBuGn, domain = sc_time_2019_selective$`uni_rank`,reverse=TRUE)
 
-ui <- bootstrapPage(
-tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
-leafletOutput("map", width = "100%", height = "100%"),
-absolutePanel(top = 10, right = 10,
-              style="z-index:500;", # legend over my map (map z = 400)
-              tags$h3("map"), 
-              sliderInput("periode", "Chronology",
-                          min(df$year),
-                          max(df$year),
-                          value = range(df$year),
-                          step = 1,
-                          sep = ""
-              )
+#set popups 
+content <- paste("School",sc_time_2019_selective$INSTNM,"<br/>",
+                 "Number of Undergrads:",sc_time_2019_selective$UGDS,"<br/>",
+                 "Selectivity:", sc_time_2019_selective$uni_rank,"<br/>",
+                 "Median Debt:",paste('$',round(sc_time_2019_selective$DEBT_MDN,2)),"<br/>")
+sc_time_2019_selective
+leaflet(sc_time_2019_selective) %>% addTiles('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png') %>%
+  addCircles(col = ~pal1(sc_time_2019_selective$uni_rank),
+             radius = ~DEBT_MDN,
+             popup = content,
+             fillOpacity = 0.7) %>%
+  leaflet::addLegend(position = "bottomleft",pal = pal1, values = sc_time_2019_selective$uni_rank,
+            title = "Average Student Loans (Per Student)")
+?addLegend
+```
+
+
+The code chunk below has not been touched and includes Shiny code for later use. 
+```{r}
+library(reshape2)
+library(shiny)
+ui <- fluidPage(
+    sidebarLayout(
+        sidebarPanel(
+            p
+        ),
+        
+        mainPanel(
+            width = 9,
+            h2("Link to a saved sample.html"),
+            p("The url is https://johndoe.github.io/samples/sample.html"),
+            a(h3("Lovely Birds"),
+              href = "https://johndoe.github.io/samples/sample.html",
+              target = "blank"),
+            hr(),
+            h2("Text and image example", id = "birds"),
+            fluidRow(
+                column(
+                    7,
+                    includeMarkdown("markdown/birds.Rmd")
+                ),
+                column(
+                    5,
+                    img(src = "birds.png", width = "100%")
+                )
+            ),
+        )
+    )
 )
-)
 
-server <- function(input, output, session) {
-
-# reactive filtering data from UI
-
-reactive_data_chrono <- reactive({
-  df %>%
-    filter(year >= input$periode[1] & year <= input$periode[2])
-})
-
-
-# static backround map
-output$map <- renderLeaflet({
-  leaflet(df) %>%
-    addTiles() %>%
-    fitBounds(~min(lng), ~min(lat), ~max(lng), ~max(lat))
-})  
-
-# reactive circles map
-observe({
-  leafletProxy("map", data = reactive_data_chrono()) %>%
-    clearShapes() %>%
-    addMarkers(lng=~lng,
-               lat=~lat,
-               layerId = ~id) # Assigning df id to layerid
-})
-}
-
-shinyApp(ui, server)
 
 ```
 
