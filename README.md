@@ -17,8 +17,7 @@ Term: Spring 2021
 
 ### src/
 	├── data
-	├── features
-	├── models
+	├── solutions
 	├── visualizations
 ### reports/
 	├── documents
