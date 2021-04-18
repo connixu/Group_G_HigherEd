@@ -9,7 +9,7 @@ output: html_notebook
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r packages, echo=FALSE, eval=TRUE, warning=FALSE, message=FALSE}
+```{r packages, results="hide"}
 r = getOption("repos")
 r["CRAN"] = "http://cran.us.r-project.org"
 options(repos = r)
@@ -51,7 +51,7 @@ As discussed in other sections of our repository, this project sought to explore
 ### College Scorecard 
 We worked with the 2019 College Scorecard (and with the 2010-2019 College Scorecard) to look at some trends that we thought would be interesting. The following is the dataset and some basic columns added to it for our analysis work. One way we did this was through attaining and concatenating the College Scorecard data as directly downloaded from the NCES. Below are the columns we selected for this: 
 
-```{r csv load, eval=TRUE, echo=FALSE, message = TRUE, warnings=FALSE}
+```{r csv load, results="hide"}
 # Set the WD as Group_G_HigherEd 
 setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd")
 
@@ -99,23 +99,24 @@ sc <- sc %>%
 | Year, Year_Starting, Year_Ending | Year Starting (twice due to how the data was read in) and Year Ending period covered by the scorecard | 
 
 ```{r initial map matching, echo = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
-#note 
 us <- map_data("state")
 us_states <- as_data_frame(us) %>% dplyr::rename(state=region)
 
 mapping=aes(x = lat, y = long)
 ggplot(us,  aes(x = long, y = lat, group=group)) +
   geom_polygon(aes(), color='white') + 
-  theme_ipsum() + theme(panel.grid = element_blank())+ geom_point(data = sc, aes(x = long, y = lat, group=UNITID),color='gold',alpha=0.5) 
+  theme_ipsum() + theme(panel.grid = element_blank())+ geom_point(data = sc, aes(x = long, y = lat, group=UNITID),color='gold',alpha=0.5)
 
 ```
   
-  This dataset came with lat and lon columns, which made it somewhat easier to plot the universities without needing to geocode their locations. 
+  This dataset came with lat and lon columns, which made it somewhat easier to plot the universities without needing to Geocode their locations. 
 
-  Another way we did this by accessing the 
+  We also looked at data using the R package developed by the Urban Institute; specifically, we examined factors such as repayment rates. 
+
 
 ### Twitter Dataset  
-  When we were further along in our data visualization strategy, we also used the Twitter API to attain Tweet data about student debt. We did [xxx]
+  When we were further along in our data visualization strategy, we also used the Twitter API to attain Tweet data about student debt, searching for key hashtags involving student det, including #cancelstudentloandeby, #helpmiddleclassamericans, #zeropercentintereststudentloans as well as mentions of the terms 'borrower defense' and 'loan forgiveness.' 
+  
 
 ## Projects 
 
@@ -163,8 +164,15 @@ m <- ggplot(sc_sub, aes(x=DEBT_MDN,y=UGDS_BLACK, color = uni_rank_cat)) +
   labs(y="% Black Students", x = "Median Student Debt ($)")
 m
 ```
-  We also looked at debt and racial breakdown. As shown here, we did not identify a very clear trend - as such, I left 'race and student debt' alone for the time being as we were attempting to work on scaling down to more specific topics.
+  
+  We also looked at debt and racial breakdown. As shown here, we did not identify a very clear trend - as such, I left 'race and student debt' alone for the time being as we were attempting to work on scaling down to more specific topics.  
 
+## General Decisions  
+  We tried to follow the principles we learned in class throughout our work. Specifically, we tried to show data comparatively, 
+
+### Challenges  
+  Some challenges we encountered included:  
+  - We ha
 
 ---  
 [1] - Conwell, Jordan A. and Natasha Quadlin. Forthcoming. “Race, Gender,Higher Education, and Socioeconomic Attainment: Evidence from Baby Boomers at Mid-Life.” Social Forces. DOI: 10.1093/sf/soab010.
