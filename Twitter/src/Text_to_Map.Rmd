@@ -75,7 +75,7 @@ dev.off()
 ```
 
 #Convert Dataframe to corpus
-```{r, eval= TRUE, echo=TRUE}
+```{r, eval= TRUE, echo=FALSE}
 # Use tm package convert dataframe to corpus: https://www.rdocumentation.org/packages/tm/versions/0.7-8/topics/DataframeSource
 doc_id = c(1:4619)
 text_df <- data.frame(doc_id, text = Tweets_state$text, stringsAsFactors = FALSE)
@@ -97,7 +97,7 @@ tweets_dtm <- DocumentTermMatrix(corpus)
 ```
 
 #Convert DTM to tidy dataframe
-```{r, eval= TRUE, echo=TRUE}
+```{r, eval= TRUE, echo=FALSE}
 tweets_tidy <- tidy(tweets_dtm) %>% 
   mutate(index = as.numeric(document)) %>% 
   left_join(Tweets_state, by=c("index"="id")) %>% 
@@ -121,17 +121,11 @@ tweets_tidy_wc <- tweets_tidy %>%
 Twitter_wd <- wordcloud(tweets_tidy_wc$term, tweets_tidy_wc$n,
        max.words = 100, colors = wes_palette(name="Royal2"),
        family = "serif")
- 
-# save it in html
-library("htmlwidgets")
-# saveWidget(Twitter_wd,"tmp.html",selfcontained = F)
 
-# and in png or pdf
-webshot("tmp.html","Twitter_wd.png", delay =5, vwidth = 480, vheight=480)
 ```
 
 #Get list of top words by state
-```{r, eval= TRUE, echo=TRUE}
+```{r, eval= TRUE, echo=FALSE}
 State_top_words <- tweets_tidy %>% 
   select(term, count, state) %>% 
   group_by(state, term) %>% 
@@ -150,7 +144,7 @@ State_top_words <- tweets_tidy %>%
 #saveRDS(tweets_tidy, "TidyTwText.RDS")
 ```
 
-```{r, eval= TRUE, echo=TRUE}
+```{r, eval= TRUE, echo=FALSE}
 # Get Bing lexicon
 bing <- get_sentiments("bing")
 
@@ -163,7 +157,7 @@ Tweets_bing <- inner_join(tweets_tidy, bing, by = c("term" = "word")) %>%
   mutate(sentiment = positive-negative) 
 ```
 
-```{r, eval= TRUE, echo=TRUE}
+```{r, eval= TRUE, echo=FALSE, }
 # Join sentiment score with original twitter data fame
 Tweets_sentiment <- Tweets_state %>% 
   inner_join(Tweets_bing, by = c("id" = "index")) %>% 
@@ -180,15 +174,13 @@ Pos_Neg <- ggplot(Tweets_sentiment, aes(x=positive,y=negative)) +
         axis.ticks = element_blank(),
         plot.title = element_text(hjust=0.5))
 
-Pos_Neg
-
 png("Pos_Neg.png") #Saving plot to png
 print(Pos_Neg)
 dev.off()
 ```
 
 #Let’s make a choropleth map based on sentiment score by state
-```{r, eval= TRUE, echo=TRUE}
+```{r, eval= TRUE, echo=FALSE}
 
 # count by state
 tw_state <- Tweets_sentiment %>%
@@ -225,7 +217,7 @@ states_shape_tweets <- geo_join(states, tw_state, "name", "state")
 ```
 
 #choropleth map of Twitter Sentiment across States 
-```{r, eval= TRUE, echo=TRUE}
+```{r, eval= TRUE, echo=FALSE}
 # Creating a color palette based on the number range in the total column
 pal <- colorNumeric("YlOrRd", domain=states_shape_tweets$Avg.Sentiment)
 
@@ -327,8 +319,8 @@ icons <- awesomeIcons(
 
 
 # Map
-map_title2 <- tags$p(tags$style('p {color: black; font-size: 15px; family: serif}'),
-                    tags$b('#CancelStudentDebt Tweets in the US'))
+map_title2 <- tags$p(tags$style('p {color: gray; font-size: 14px; family: serif}'),
+                    tags$b('#CancelStudentDebt Tweets in the US - Location of Selective Insitutions'))
 
 leaflet() %>%
   setView(-98.483330, 38.712046, zoom = 4) %>% 
@@ -368,7 +360,7 @@ leaflet() %>%
              stroke = TRUE, 
              group = 'Twitter Sentiments',
              fillOpacity = 1) %>% 
-  addLegend(position = "bottomright",
+  addLegend(position = "bottomleft",
             title = "Average Sentiment Score", 
             pal = ppal, 
             values = states_shape_tweets$Avg.Sentiment, 
