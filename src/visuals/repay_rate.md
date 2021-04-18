@@ -206,7 +206,7 @@ sc_repay %>%
   
   # labels
   ggtitle("Proportion of University Fiscal Cohorts Whose Loan\nBalances Declined in Year One of Repayment\n") +
-  ylab("Fiscal Cohort\n") + xlab(NULL) +
+  ylab("Fiscal Cohort Year\n") + xlab(NULL) +
   #scale_fill_distiller(direction = -1) +
   scale_x_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
   scale_x_continuous(labels = scales::percent_format()) +
