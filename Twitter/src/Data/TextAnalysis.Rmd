@@ -46,6 +46,9 @@ set.seed(1234)
 wordcloud(words = df$word, freq = df$freq, min.freq = 1,max.words=200, random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Dark2"))
 ```
 
+Here the word cloud showed the frequency of word within the Twitter, where the term 'student' is the one that mentioned most.
+
+
 #### Sentiment Analysis (using Bing)
 
 ```{r}
@@ -126,4 +129,24 @@ ggplot(twt_time,aes(x=created_at))+
        x='Date')
 
 ```
+
+To know more about the condition of student debt in US, we started with investigating the relationship between the school selectivity and median of student debt: 
+
+(Selectivity graph)
+
+With the admission rate increase, the schools that are less selective tend to have less median student debt.
+
+Other than the school selectivity, the family social-economic status is also an important factor that related to student debt. Here we take a look for the relationship between student loan repayment rate and the family income group across the years.
+
+(Income status graph)
+
+Other than the numerical evidence showed above, the mass public's voice towards the student debt and its cancellation on Twitter has also been viewed. Bascially speaking, the frequency of words among the tweets is as the word cloud showed below:
+
+(Word Cloud)
+
+To understand the expression with more detail across the US, we draw a map that containing the sentiment score and top frequency words by states, showing as below. The map also contained the location of school, presenting the potential relationship between sentiment and school selectivity:
+
+(map view the tweets by State)  
+
+
 

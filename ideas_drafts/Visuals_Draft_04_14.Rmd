@@ -117,6 +117,25 @@ table <- datatable(sc_dt,style = "default",filter = 'top',  caption = 'Universit
 table
 
 ```
+```{r}
+install.packages('treemap')
+install.packages('highcharter')
+library(highcharter)
+library(treemap)
+
+sc_dt %>% 
+  treemap(index="uni_rank",
+          vSize="Number of Universities",
+        type="index",
+        fontsize.labels=c(12, 8), 
+        palette =  viridis(5),
+        fontfamily.title = "Arial Narrow",
+        fontfamily.labels = "Arial Narrow",
+        border.col="white",
+        title = 'Top 10 Parking Violations in NYC by Frequency of Occurrence'
+  )
+```
+
 
 ## Scattergram as Violin Plot
 ```{r, echo=TRUE, eval=TRUE}
@@ -166,8 +185,8 @@ sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>%
 
 ```{r, echo=TRUE, eval=TRUE}
 #Process the data 
-sc_time <- read_csv('2009_2019_student_debt.csv') 
-
+setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd")
+sc_time <- read_csv('src/2010_2019_student_debt.csv') 
 sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
   transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
   dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) %>% 
@@ -226,7 +245,7 @@ p <- sc_time_df %>%
   scale_x_continuous(breaks = round(seq(min(sc_time$Year_Ending), max(sc_time$Year_Ending), by = 2),1)) +
   labs(x='', y='Inflation-Adjusted Median Loan Amount per Student\n(thousands)', 
        title='Student Debt Has Been Rising Over The Years',
-       color='',fill='',group='')
+       color='',fill='',group='',linetype='')
 ggplotly(p)
 
 
@@ -266,14 +285,15 @@ fig1
 Chloropleth showing average student debt (this is only 2019 but I have a filter at the beginning that will allow me to incorporate a slider for the year).
 
 ```{r Student Debt map - Chloropleth, echo=TRUE, eval=TRUE }
+
 # Additions of States df from Tigris File 
 library(tigris)
+
 states <- states(cb = TRUE)
 
 # Can change to sc_time_year 
 sc_time_2019 <- sc_time %>% subset(Year_Ending = 2019) %>% 
-  group_by(STABBR) %>% mutate(`Average Student Loans`=sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE))
-sc_time_2019_state <- sc_time_2019 %>% group_by(STABBR,`Average Student Loans`) %>% summarize()
+  group_by(STABBR) %>% mutate(`Average Student Loans`=sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% group_by(STABBR,`Average Student Loans`) %>% summarize()
 
 # States 
 states_2019 <- states %>% 
@@ -284,8 +304,8 @@ library(leaflet.providers)
 library(leaflet)
 #used 'success' measures. 
 
-pal = colorFactor(ShortPuBuGn, domain = states_2019$`Average Student Loans`)
-states_2019
+pal = colorFactor('Greens', domain = states_2019$`Average Student Loans`)
+
 pop_pop <- paste("State:",states_2019$NAME,"<br/>",
                  "Average Student Loans","<br/>",
                  "of Schools Located in State:",paste('$',round(states_2019$`Average Student Loans`)))
@@ -300,9 +320,9 @@ leaflet(states_2019) %>% addProviderTiles("CartoDB.Positron") %>%
                 color = "#666",
                 fillOpacity = 0.7,
                 bringToFront = TRUE,
-                ),popup=pop_pop) %>%
-  leaflet::addLegend(position = "bottomleft", pal = pal, values = c(paste('$',round(min(states_2019$`Average Student Loans`))), 
-                                                          paste('$',round(max(states_2019$`Average Student Loans`)))),
+                ),popup=pop_pop) %>% addLegend(position = "bottomleft", colors =c("#EDF8E9","#BAE4B3","#74C476","#31A354","#006D2C"), 
+                     labels = c(paste('$',round(min(states_2019$`Average Student Loans`)))," "," "," ", 
+                                paste('$',round(max(states_2019$`Average Student Loans`)))),
             title = "Average Student Loans (Per Student)") %>%
   leaflet::setView(-98.5795, 39.8282, zoom=3)
 ?addLegend
