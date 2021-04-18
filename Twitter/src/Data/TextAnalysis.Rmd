@@ -6,7 +6,8 @@ output: html_document
 ---
 
 ```{r}
-tweets <- readRDS("C:/Users/Ariel/Desktop/Group_G_HigherEd/Twitter/src/Data/Studentloan_tweets.RDS")
+tweets <- readRDS("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd/Twitter/src/Data/Studentloan_tweets.RDS")
+#tweets <- readRDS("C:/Users/Ariel/Desktop/Group_G_HigherEd/Twitter/src/Data/Studentloan_tweets.RDS")
 ```
 
 ```{r}
