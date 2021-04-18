@@ -37,6 +37,12 @@ library(htmltools)
 #install.packages("leaflet.extras", dependencies = TRUE)
 library(leaflet.extras)
 library(zoo)
+library(wordcloud)
+library(wesanderson)
+library(lubridate)
+#install webshot
+library(webshot)
+install_phantomjs()
 ```
 
 ```{r, echo=FALSE}
@@ -45,20 +51,27 @@ Tweets_state <- readRDS('./Data/Geotweets_state_cleaned.RDS') %>%
 ```
 
 ```{r, echo=FALSE}
+#source("../../src/visuals/ourtheme.R")
+
 SearchTrend <- read_csv('./Data/SearchTrend.csv', col_names = TRUE, skip = 2) %>% 
   rename(Total_Searches = 'student loan forgiveness: (United States)') %>% 
-  mutate(Time = as.Date(Month, "%y-%b"))
+  mutate(Month = zoo::as.yearmon(Month))
 
-min <- as.Date("2004-01-01")
-max <- as.Date("2021-05-01")
-
-Trend <- ggplot(SearchTrend,aes(x=Time, y=Total_Searches,color = "darkgoldenrod1", group=1)) +
-  geom_line() +
+Trend <- ggplot(SearchTrend,aes(x=Month, y=Total_Searches,group=1)) +
+  geom_line(color = "#68A982") +
   scale_color_manual(values="#F2C65F")+
-  scale_x_date(limits = c(min, max))+
-  theme_minimal()
+  xlab("") + 
+  ylab("Total Searches") + 
+  labs(title="Interest in #StudentLoanForgiveness over Time",caption = "Source: Google Trend Search") +
+  theme(text=element_text(size=12,  family="serif"),
+        panel.background= element_rect(fill="white"),
+        legend.position = "bottom",
+        axis.ticks = element_blank(),
+        plot.title = element_text(hjust=0.5))
+Trend  
+png("Twitter_Trend.png") #Saving plot to png
 
-Trend
+dev.off()
 ```
 
 #Convert Dataframe to corpus
@@ -98,7 +111,23 @@ tweets_tidy <- tidy(tweets_dtm) %>%
                         ifelse(state=="michigan:south","michigan",
                         ifelse(state=="virginia:main", "virginia",
                         ifelse(state=="washington:main","washington",state))))))))))) 
-tweets_tidy
+tweets_tidy_wc <- tweets_tidy %>% 
+  group_by(term) %>%
+  summarize(n = sum(count)) %>%
+  arrange(desc(n)) %>% 
+  filter(! term %in% c("student","loan","debt","cancelstudentdebt","amp","forgiveness","like","can","just","get","will")) 
+
+ # Create a wordcloud with wesanderson palette
+Twitter_wd <- wordcloud(tweets_tidy_wc$term, tweets_tidy_wc$n,
+       max.words = 100, colors = wes_palette(name="Royal2"),
+       family = "serif")
+ 
+# save it in html
+library("htmlwidgets")
+# saveWidget(Twitter_wd,"tmp.html",selfcontained = F)
+
+# and in png or pdf
+webshot("tmp.html","Twitter_wd.png", delay =5, vwidth = 480, vheight=480)
 ```
 
 #Get list of top words by state
@@ -142,7 +171,14 @@ Tweets_sentiment <- Tweets_state %>%
 
 Pos_Neg <- ggplot(Tweets_sentiment, aes(x=positive,y=negative)) +
   geom_jitter(alpha=0.8, color="rosybrown3") +
-  theme_minimal()
+  xlab("Positive Sentiment") + 
+  ylab("Negative Sentiment") + 
+  labs(title="Twitter Sentiment Pattern",caption = "Source: Twitter") +
+  theme(text=element_text(size=12,  family="serif"),
+        panel.background= element_rect(fill="white"),
+        legend.position = "bottom",
+        axis.ticks = element_blank(),
+        plot.title = element_text(hjust=0.5))
 
 Pos_Neg
 
@@ -181,7 +217,7 @@ tw_state <- Tweets_sentiment %>%
 # Polygon stuff from shape file
 #install.packages("tigris")
 library(tigris)
-states <- states(cb=T) %>%
+states <- states(cb=T) %>% 
   mutate(name = tolower(NAME))
 
 # Use the Tigris function geo_join to bring together the states shapefile and the tw_states dataframe
@@ -291,7 +327,7 @@ icons <- awesomeIcons(
 
 
 # Map
-map_title2 <- tags$p(tags$style('p {color: black; font-size: 15px}'),
+map_title2 <- tags$p(tags$style('p {color: black; font-size: 15px; family: serif}'),
                     tags$b('#CancelStudentDebt Tweets in the US'))
 
 leaflet() %>%
