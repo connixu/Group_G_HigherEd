@@ -1,6 +1,6 @@
 ---
 title: "Process Notebook"
-author: "Connie Xu, Arielle Herman, Zhirui (Ariel) Luo, Grace Li"
+author: "Connie Xu, Arielle Herman, Zhirui (Ariel) Luo, Grace Xuejing Li"
 date: "3/18/2021"
 output: html_notebook
 ---
@@ -115,9 +115,9 @@ ggplot(us,  aes(x = long, y = lat, group=group)) +
 
 
 ### Twitter Dataset  
-  When we were further along in our data visualization strategy, we also used the Twitter API to attain Tweet data about student debt, searching for key hashtags involving student det, including #cancelstudentloandeby, #helpmiddleclassamericans, #zeropercentintereststudentloans as well as mentions of the terms 'borrower defense' and 'loan forgiveness.' 
-  
 
+  When we were further along in our data visualization strategy, we also used the Twitter API to attain Tweet data about student debt, searching for key hashtags involving student det, including #cancelstudentloandeby, #helpmiddleclassamericans, #zeropercentintereststudentloans as well as mentions of the terms 'borrower defense' and 'loan forgiveness'. The size of the Tweet data comes down to 2.4MB.  In the preprocessing steps, we selected only the following columns for analysis: "user","text","display_text_width", "hashtags","location". We want to use the text column to calculate the sentiment score for each tweet and then calculate the average sentiment score for each state, and the text width column helps us to find out which state is most concerned about cancelling student debt. Since our primary focus for the Twitter dataset is to draw patterns of these tweets with geographical information and Twitter doesn’t provide sufficient geographical information for each tweet, we rely heavily on the users’ location information. This process involves getting rid of all the NA values and using google API to geocode users’ locations to longitude and latitude. Then, we reverse geocoded the data to get state and county data. 
+  
 ## Projects 
 
 As discussed in the introductory section, we had far too many subtopics within our dataset and we wanted to better explore a specific sub-topic prior to planning our visualizations. Thus, we began with trying to identify patterns within our dataset and other related datasets. 
@@ -184,6 +184,27 @@ In addition to modifying the calculations, I made some changes in the visual rep
 These changes yielded the below plot:
 ```{r warning=F, message=F}
 knitr::include_graphics("../../src/visuals/repay_rate_files/figure-html/repay_rate_ave-1.png")
+```
+
+### Twitter Sentiment Across States
+
+
+   The google trend website gives us data about the time period and the count of total number of searches on Google. Plotting the total number of searches overtime helps us to see changes in people's interest in student loan forgiveness. The pattern clearly shows that people's interest in this topic has spiked in 2021. We hypothesized that this is a result of the Biden administration's recent announcement of a reinterpretation of a federal student loan cancellation program which will result in $1 billion in student loan forgiveness. Ever since this announcement, more people have been pushing for a more progressive policy and asking President Biden to cancel student debt through executive action. There is still a lot of uncertainties around whether a universal student loan forgiveness will be initiated via an executive order or via legislation. 
+   
+```{r warning=F, message=F}
+knitr::include_graphics("../../Twitter/src/visualizations/Twitter_Trend.png")
+```
+
+  The wordcloud map shows key words that appeared in the tweets data. The size of the word represents how frequent it appears in tweets. Some of the most noticeable ones include people, president, loans, job, college, pay, biden, education, studentloanforgiveness, etc.
+
+```{r warning=F, message=F}
+knitr::include_graphics("../../Twitter/src/visualizations/WordCloud.png")
+```
+
+Below is the initial choropleth map we wanted to put in our project. It shows the distribution of average sentiment score in each state. The popup window shows the state, the associated average sentiment score, the total word counts, and the top tweets keywords. Darker color means the state has a higher average sentiment score.  
+
+```{r warning=F, message=F}
+knitr::include_graphics("../../Twitter/src/visualizations/choropleth_sentiment.png")
 ```
 
 ### Appendix: Trends Explored and Scrapped
