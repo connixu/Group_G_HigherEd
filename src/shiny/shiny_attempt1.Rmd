@@ -25,7 +25,8 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem("About", tabName = "about"),
       menuItem("Student Loans", tabName = "loans"),
-      menuItem("What do people think?", tabName = "tweets")
+      menuItem("What do people think?", tabName = "tweets"),
+      menuItem("Where do people think it?", tabName = "tweetmap")
     )
   ),
   dashboardBody(
@@ -34,9 +35,22 @@ ui <- dashboardPage(
               fluidPage(
                 tags$div(
                   tags$h1("Project Motivation"),
-                  "Biden's recent loan forgiveness bill has sparked much debate.  And so, we decided to investigate
-                  student repayment rates and student debt over time.  Then, we look at what people are saying and where
-                  they are saying it.",
+                  "At the end of this March, President Biden announced the cacellation of 1.3 billion dollar
+                  of student loans, accompanying with a clearer picture of his overall plan on student loan.
+                  While he cancelled in total of 2.3 billion dollar of student loans for more than 110,000
+                  student loan borrowers and received much apprais from the group, the reaction among all the
+                  Americans on this controversial issue has been quiet different. Therefore, in this project,
+                  our team want to investigate further on why student loan becomes a serious problem here in US,
+                  as well as how people in US has reacted to the issue based on their talk on social medis platform.
+                  
+                  As discussed in other sections of our repository, this project sought to explore a factors
+                  related to socioeconomic conditions, student debt, inequities, and policy. This was a really
+                  broad topic so we did a decent amount of exploration of the data prior to deciding on a more
+                  specific topic. We tried to focus on spefic aspects of the student loan issue including university
+                  selectivity, family income, repayment rate over time, and the regional differnce of debt amount to
+                  understand why student debt becomes a more and more serious problem that people in US now are
+                  highly concern with. After understanding the issue and recognizing the problem, we then use
+                  the information from Google trend and Twitter platform to see how people reatced and talked about it.",
                   tags$h1("Sources"),
                   "For our project, we looked at data from the following sources:
                   (1) Scorecard, (2) Urban Institute Education Data, (3) Twitter API, and (4) Google Trends",
@@ -70,14 +84,13 @@ ui <- dashboardPage(
           tags$div(
             tags$h1("Student Debt", align = "center")),
         fluidRow(align = "left",
-                 
-                 )
+                 column(5, wellPanel(dataTableOutput("table"))))
         ),
       tabItem(tabName = "tweets", class = "active",
           fluidPage(
             fluidRow(align = "left",
                     column(6, wellPanel(plotOutput("trend"))),
-                    column(6, wellPanel(plotOutput("wordcloud")))),
+                    column(6, wellPanel(wordcloud2Output("wordcloud")))),
             fluidRow(align = "left",
                      column(6, wellPanel(p("The google trend website gives us data about the time period and the count of
                                  total number of searches on Google. Plotting the total number of searches overtime
@@ -95,8 +108,10 @@ ui <- dashboardPage(
                                  include people, president, loans, job, college, pay, biden, education,
                                  studentloanforgiveness, etc. This keywords pattern confirms our initial hypothesis that
                                  the recent discussion on canceling student debt on twitter is around the biden
-                                 administration as a result of the $1B student loan cancellation announced in Mid-march.")))),
-            fluidRow(column(12, wellPanel(leafletOutput("tweetsmap"))))),
+                                 administration as a result of the $1B student loan cancellation announced in Mid-march.")))))),
+      tabItem(tabName = "tweetmap", class = "active",
+          fluidPage(
+            fluidRow(column(12, wellPanel(leafletOutput("tweetsmap")))),
             fluidRow(align = "left",
                      column(12, wellPanel(p("Lastly, we want to see if there's an overlap between the states that are most
                      concerned about student loan forgiveness and where the selective schools are located. We added
@@ -118,7 +133,7 @@ ui <- dashboardPage(
                      coastlines. On the west coast, most of the selective universities are in California. And the
                      selective universities spread out more evenly on the east coast. Overall, we can see an overlap
                      by looking at the two layers together. States with higher concentration of selective schools
-                     are also where people are most concerned about student loan forgiveness.")))))
+                     are also where people are most concerned about student loan forgiveness."))))))
       ) # tabItems
     ) # dashboard Body
   ) # ui?
@@ -140,12 +155,18 @@ server <- function(input, output) {
     Trend
   })
   
-  output$wordcloud <- renderPlot({
+  output$wordcloud <- wordcloud2::renderWordcloud2({
     Twitter_wd
   })
   
-  output$tweetsmap <- renderLeaflet({
+  output$tweetsmap <- leaflet::renderLeaflet({
     TweetsMap
+  })
+  
+  # Connie ~~~~~~~~~~~~~~~~~~~~~~~
+  
+  output$table <- renderDataTable({
+    table_1
   })
   
 }
