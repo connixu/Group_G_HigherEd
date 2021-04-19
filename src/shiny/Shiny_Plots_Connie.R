@@ -35,8 +35,13 @@ install.packages('quantmod')
 
 
 # Install Data 
+<<<<<<< Updated upstream
 setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd/src/shiny") #to get rid of later
 sc_time <- read.csv('data/2010_2019_student_debt.csv') 
+=======
+setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd") #to get rid of later
+sc_time <- read.csv('/src/2010_2019_student_debt.csv') 
+>>>>>>> Stashed changes
 sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
   transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
   dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) %>% 
