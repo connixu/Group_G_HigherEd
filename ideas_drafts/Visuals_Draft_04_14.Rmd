@@ -384,12 +384,14 @@ library(reshape2)
 library(shiny)
 ui <- fluidPage(
   titlePanel("I love Graphs about Student Debt"),
-  # CODE BELOW: Add select input named "sex" to choose between "M" and "F"
-  selectInput('year',
-  'Year',
-  choices=c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)), 
-  # Add plot output to display top 10 most popular names
+  # selectInput('year',
+  # 'Year',
+  # choices=c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)), 
+  sliderInput(inputId = "year",
+  label = "Year",
+  value = c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)),
   leafletOutput("studentdebtmap")
+
 )
 
 server <- function(input, output, session){
