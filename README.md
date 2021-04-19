@@ -41,4 +41,5 @@ Term: Spring 2021
 - [meeting notes](https://docs.google.com/document/d/1QgpVCZkyFSZYQU7PL0Vgf8Nl1bISBuN41Yo3HjtgKvI/edit)
 
 ### [Proposal](https://github.com/QMSS-G5063-2021/Group_G_HigherEd/tree/main/proposal)
-### [Presentation](https://www.canva.com/design/DAEbgBTMGTE/share/preview?token=whgxMt8Kq9nJ9iJgibDudQ&role=EDITOR&utm_content=DAEbgBTMGTE&utm_campaign=designshare&utm_medium=link&utm_source=sharebutton)
+### [Presentation Slides](https://www.canva.com/design/DAEbgBTMGTE/share/preview?token=whgxMt8Kq9nJ9iJgibDudQ&role=EDITOR&utm_content=DAEbgBTMGTE&utm_campaign=designshare&utm_medium=link&utm_source=sharebutton)
+### [Presentation Video](https://drive.google.com/file/d/1INItL6UpNl8VEpGEI1YLbWv0hvBqGlLU/view?usp=sharing)
