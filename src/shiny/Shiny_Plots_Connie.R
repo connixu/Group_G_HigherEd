@@ -32,28 +32,15 @@ library(treemap)
 library(leaflet.providers)
 library(leaflet)
 install.packages('quantmod')
-
+library(quantmod)
 
 # Install Data 
-#<<<<<<< Updated upstream
 setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd/src/shiny") #to get rid of later
 sc_time <- read.csv('data/2010_2019_student_debt.csv') 
-#=======
 setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd") #to get rid of later
 sc_time <- read.csv('/src/2010_2019_student_debt.csv') 
-#>>>>>>> Stashed changes
-sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
-  transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
-  dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) %>% 
-  mutate(DEBT_MDN_STUDENT = DEBT_MDN*UGDS)
-sc <- sc_time %>% filter(Year_Ending == 2019)
-sc <- sc %>%
-  dplyr::mutate(uni_rank = case_when(
-    ADM_RATE < 0.2 ~ 'highly selective/elite',
-    ADM_RATE < 0.3 ~ 'more selective',
-    ADM_RATE < 0.5 ~ 'selective',
-    ADM_RATE < 0.7 ~ 'less selective',
-    TRUE ~ 'not selective')) %>% mutate(uni_rank = factor(uni_rank, levels=c('not selective', 'less selective', 'selective', 'more selective', 'highly selective/elite')))
+>>>>>>> Stashed changes
+
 
 # Data Table table_1
 sc_dt <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% group_by(uni_rank) %>% mutate(`Number of Universities` = n()) %>% ungroup() %>% mutate(DEBT_MDN_STUDENTS = DEBT_MDN*UGDS) %>% group_by(uni_rank) %>% mutate(`Median Student Loans` = paste('$',round(sum(DEBT_MDN_STUDENTS, na.rm=TRUE)/sum(UGDS, na.rm=TRUE),2))) %>%
@@ -65,7 +52,7 @@ table_1 <- datatable(sc_dt,style = "default",filter = 'top',  caption = 'Univers
 
 # Tree Map treemap
 treemap <- sc_dt %>% dplyr::mutate(Description=paste(`University Selectivity`, '\n',`Number of Universities`,'Universities'), sep ="\n") %>%
-  treemap(index="Description",
+  hight::treemap(index="Description",
           vSize="Number of Universities",
           type="index",
           fontsize.labels=c(12, 8),
@@ -92,8 +79,7 @@ admissions_scatter <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transfor
 
 # Line Graph plot_line_plotly
   # CPI Inflation Rates - Got Average Yearly Inflation Rate for Scaling for Student Debt 
-library(quantmod)
-getSymbols("CPIAUCSL", src='FRED')
+quantmod::getSymbols("CPIAUCSL", src='FRED')
 avg.cpi <- apply.yearly(CPIAUCSL, mean)
 cf <- as.data.frame(avg.cpi/as.numeric(avg.cpi['2009'])) 
 cf$Year_Ending <- format(as.Date(row.names(cf), format="%Y-%m-%d"),"%Y")
@@ -117,11 +103,11 @@ sc_time_df <- sc_time %>% group_by(`Year_Ending`) %>% mutate(`Average Annual Stu
            CPIAUCSL) %>% 
   mutate(`Adjusted Average Annual Student Debt - Composite` = `Average Annual Student Debt - National`/
            CPIAUCSL)
-
+  #More data manipulation
 sc_df <- sc_time_df %>% group_by(`Average Annual Student Debt - National`,`Adjusted Average Annual Student Debt - Composite`,Year_Ending) %>% summarize() %>% mutate(uni_rank='national average') %>% mutate(`Adjusted Average Annual Student Debt`=`Adjusted Average Annual Student Debt - Composite`) %>% dplyr::mutate(`Average Annual Student Debt (by Selectivity)` = `Average Annual Student Debt - National`) %>% merge(cf) %>% select(Year_Ending,`Average Annual Student Debt (by Selectivity)`, uni_rank, `Average Annual Student Debt - National`, CPIAUCSL, `Adjusted Average Annual Student Debt`,`Adjusted Average Annual Student Debt - Composite`)
 sc_time_df <- sc_time_df %>% rbind(sc_df) %>% mutate(uni_rank = factor(uni_rank, levels=c('national average','not selective', 'less selective', 'selective', 'more selective', 'elite/highly selective'))) %>% 
   mutate(`Group Level` = ifelse(uni_rank == 'national average', 'National','Selectivity'))
-
+  #Name of Static Graph 
 plot_line <- sc_time_df %>% 
   ggplot(.,aes(x=Year_Ending,y=`Adjusted Average Annual Student Debt`, color=uni_rank)) + 
   geom_line(aes(linetype=`Group Level`)) + 
@@ -135,8 +121,8 @@ plot_line <- sc_time_df %>%
   labs(x='', y='Inflation-Adjusted Median Loan Amount per Student\n(thousands)', 
        title='Student Debt Has Been Rising Over The Years',
        color='',fill='',group='',linetype='')
+  #Name of Plotly Graph
 plot_line_plotly <- ggplotly(plot_line)
-
 
 #Chloropleth
 library(reshape2)
@@ -147,11 +133,10 @@ ui <- fluidPage(
   # 'Year',
   # choices=c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)), 
   sliderInput(inputId = "year",
-              label = "Year",
-              value = c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)),
+              label = "Year", value=2019,min=2010,max=2019,sep=''),
   leafletOutput("studentdebtmap")
-  
 )
+
 
 server <- function(input, output, session){
   # Render plot of top 10 most popular names
@@ -192,4 +177,6 @@ server <- function(input, output, session){
 }
 
 shinyApp(ui = ui, server = server)
+
+
 
