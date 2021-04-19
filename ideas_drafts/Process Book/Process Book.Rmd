@@ -2,7 +2,9 @@
 title: "Process Notebook"
 author: "Connie Xu, Arielle Herman, Zhirui (Ariel) Luo, Grace Xuejing Li"
 date: "3/18/2021"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -45,9 +47,9 @@ suppressMessages(library(devtools))
 devtools::install_github("rstudio/leaflet")
 ```
 ## Introduction & Motivation
-At the end of this March, President Biden announced the cacellation of 1.3 billion dollar of student loans, accompanying with a clearer picture of his overall plan on student loan. While he cancelled in total of 2.3 billion dollar of student loans for more than 110,000 student loan borrowers and received much apprais from the group, the reaction among all the Americans on this controversial issue has been quiet different. Therefore, in this project, our team want to investigate further on why student loan becomes a serious problem here in US, as well as how people in US has reacted to the issue based on their talk on social medis platform. 
+At the end of this March, President Biden announced the cancellation of 1.3 billion dollar of student loans, accompanying with a clearer picture of his overall plan on student loan. While he canceled in total of 2.3 billion dollar of student loans for more than 110,000 student loan borrowers and received much appraise from the group, the reaction among all the Americans on this controversial issue has been quiet different. Therefore, in this project, our team want to investigate further on why student loan becomes a serious problem here in US, as well as how people in US has reacted to the issue based on their talk on social media platform. 
 
-As discussed in other sections of our repository, this project sought to explore a factors related to socioeconomic conditions, student debt, inequities, and policy. This was a really broad topic so we did a decent amount of exploration of the data prior to deciding on a more specific topic. We tried to focus on spefic aspects of the student loan issue including university selectivity, family income, repayment rate over time, and the regional differnce of debt amount to understand why student debt becomes a more and more serious problem that people in US now are highly concern with. After understanding the issue and recognizing the problem, we then use the information from Google trend and Twitter platform to see how people reatced and talked about it.
+As discussed in other sections of our repository, this project sought to explore a factors related to socioeconomic conditions, student debt, inequities, and policy. This was a really broad topic so we did a decent amount of exploration of the data prior to deciding on a more specific topic. We tried to focus on specific aspects of the student loan issue including university selectivity, family income, repayment rate over time, and the regional difference of debt amount to understand why student debt becomes a more and more serious problem that people in US now are highly concern with. After understanding the issue and recognizing the problem, we then use the information from Google trend and Twitter platform to see how people reacted and talked about it.
 
 ## The Data 
 ### College Scorecard 
@@ -116,12 +118,12 @@ ggplot(us,  aes(x = long, y = lat, group=group)) +
   We also looked at data using the R package developed by the Urban Institute; specifically, we examined factors such as repayment rates. 
 
 ### Google Trend
+The CSV file contains two columns. the first column shows the monthly date from 2004-01 to 2021-04 and the second column shows the number of searches on "student loan forgiveness" on Google in that month. We hope to observe changes in the number of monthly searches over time.  
 
-To see the whether people has concerned on the topic about student debt over time, we looked at the Google trend as well that can be used as an evidence of whether the topic is heated among the people in US. Based on the result we saw the number of searches towards the term 'student loan forgiveness' has raised over the recent years and spiked in the recent month, which we assume due to Biden's recent bill about student debt cancellation. 
 
 ### Twitter Dataset  
 
-  When we were further along in our data visualization strategy, we also used the Twitter API to attain Tweet data about student debt, searching for key hashtags involving student det, including #cancelstudentloandeby, #helpmiddleclassamericans, #zeropercentintereststudentloans as well as mentions of the terms 'borrower defense' and 'loan forgiveness'. The size of the Tweet data comes down to 2.4MB.  In the preprocessing steps, we selected only the following columns for analysis: "user","text","display_text_width", "hashtags","location". We want to use the text column to calculate the sentiment score for each tweet and then calculate the average sentiment score for each state, and the text width column helps us to find out which state is most concerned about cancelling student debt. Since our primary focus for the Twitter dataset is to draw patterns of these tweets with geographical information and Twitter doesn’t provide sufficient geographical information for each tweet, we rely heavily on the users’ location information. This process involves getting rid of all the NA values and using google API to geocode users’ locations to longitude and latitude. Then, we reverse geocoded the data to get state and county data. 
+  When we were further along in our data visualization strategy, we also used the Twitter API to attain Tweet data about student debt, searching for key hashtags involving student debt, including #cancelstudentloandeby, #helpmiddleclassamericans, #zeropercentintereststudentloans as well as mentions of the terms 'borrower defense' and 'loan forgiveness'. The size of the Tweet data comes down to 2.4MB.  In the preprocessing steps, we selected only the following columns for analysis: "user","text","display_text_width", "hashtags","location". We want to use the text column to calculate the sentiment score for each tweet and the average sentiment score for each state. The text width column helps us to find out which state is most concerned about canceling student debt. Since our primary focus for the Twitter data set is to draw patterns of these tweets with geographical information and Twitter doesn’t provide sufficient geographical information for each tweet, we relied heavily on the users’ location information. This process involves getting rid of all the NA values and using google API to geocode users’ locations to longitude and latitude. Then, we reverse geocoded the data to get state and county data. 
   
 ## Projects 
 
@@ -223,10 +225,10 @@ knitr::include_graphics("../../src/visuals/repay_rate_files/figure-html/repay_ra
 
 ### Twitter Sentiment Across States
 
-   The google trend website gives us data about the time period and the count of total number of searches on Google. Plotting the total number of searches overtime helps us to see changes in people's interest in student loan forgiveness. The pattern clearly shows that people's interest in this topic has spiked in 2021. We hypothesized that this is a result of the Biden administration's recent announcement of a reinterpretation of a federal student loan cancellation program which will result in $1 billion in student loan forgiveness. Ever since this announcement, more people have been pushing for a more progressive policy and asking President Biden to cancel student debt through executive action. There is still a lot of uncertainties around whether a universal student loan forgiveness will be initiated via an executive order or via legislation. 
-   
+  The Google trend website gives us data about the time and the count of the total number of searches on Google. Plotting the total number of searches over time helps us to see changes in people's interest in student loan forgiveness. The pattern clearly shows that people's interest in this topic has spiked in 2021. We hypothesized that this is a result of the Biden administration's recent announcement of a reinterpretation of a federal student loan cancellation program which will result in $1 billion in student loan forgiveness. Ever since this announcement, more people have been pushing for a more progressive policy and asking President Biden to cancel student debt through executive action. However, there is still a lot of uncertainties around whether a universal student loan forgiveness will be initiated via executive order or legislation. 
+  
 ```{r warning=F, message=F}
-knitr::include_graphics("../../Twitter/src/visualizations/Twitter_Trend.png")
+knitr::include_graphics("Image/Twitter_Trend.png")
 ```
   
   When looking at the extracted words and associated sentiments, we looked first at some of the most frequent words (and their cntribution to the seniment score of the tweet itself): 
@@ -245,13 +247,13 @@ knitr::include_graphics("Images/WordCloud_Ariel.png")
   The modified wordcloud map shows key words that appeared in the tweets data. The size of the word represents how frequent it appears in tweets. Some of the most noticeable ones include people, president, loans, job, college, pay, biden, education, studentloanforgiveness, etc.
 
 ```{r warning=F, message=F}
-knitr::include_graphics("../../Twitter/src/visualizations/WordCloud.png")
+knitr::include_graphics("Image/WordCloud.png")
 ```
 
 Below is the initial choropleth map we wanted to put in our project. It shows the distribution of average sentiment score in each state. The popup window shows the state, the associated average sentiment score, the total word counts, and the top tweets keywords. Darker color means the state has a higher average sentiment score.  
 
 ```{r warning=F, message=F}
-knitr::include_graphics("../../Twitter/src/visualizations/choropleth_sentiment.png")
+knitr::include_graphics("Image/choropleth_sentiment.png")
 ```
   
   We scrapped these in part because the Chloropleth itself (with statewide sentiment score) was once again not very informative as it does not end up adding to our story even about how people generally are feeling. We don't have enough information from this map about how people are feeling in different parts of the country, and it's harder to conceptualize or understand the sentiment score itself (for the viewer) in a salient way. 
