@@ -33,6 +33,17 @@ library(wesanderson)
 library(lubridate)
 #install.packages("tigris")
 library(tigris) #for polygon shape file
+if(!require(magrittr)) install.packages("magrittr")
+if(!require(dplyr)) install.packages("dplyr")
+if(!require(ggplot2)) install.packages("ggplot2")
+if(!require(RColorBrewer)) install.packages("RColorBrewer")
+if(!require(leaflet)) install.packages("leaflet")
+if(!require(plotly)) install.packages("plotly")
+if(!require(shiny)) install.packages("shiny")
+if(!require(shinyWidgets)) install.packages("shinyWidgets")
+if(!require(shinydashboard)) install.packages("shinydashboard")
+if(!require(shinythemes)) install.packages("shinythemes")
+if(!require(tigris)) install.packages("tigris")
 
 ## import data
 load("data/sc_repay.Rdata")
