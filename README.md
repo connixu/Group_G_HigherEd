@@ -16,14 +16,29 @@ Term: Spring 2021
 ## Repo Map
 
 ### src/
-	├── data
-	├── solutions
-	├── visualizations
+	├── data  # many files same as in shiny - includes data as well as data cleaning and pullling scripts. 
+		├── cs_repayment_rate
+		├── cs_student_debt 
+		├── twitter_data
+	├── shiny
+		├── data
+		├── temp
+		├── www
+	├── solutions_and_visualizations # rmd files with our visualizations as well as the related .png's where applicable
+		├── census_student_debt_etc # exploratory data about poverty and student debt - not really used in current iteration of project
+		├── repay_rate
+			├── repay_rate_visuals
+		├── student_debt
+		├── twitter
+			├── twitter_visuals
+	├── ourTheme.R  # standardized r theme: can move elsewhere but i think this should be in src 
 ### reports/
-	├── documents
-	├── figures
+	├── feedback
+	├── process_book
+		├── process_book_images
+	├── proposal 
 ### references/
-
+### references/
 
 ## Project Description: 
 
