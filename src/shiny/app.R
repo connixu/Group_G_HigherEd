@@ -32,7 +32,7 @@ library(wesanderson)
 library(lubridate)
 #install.packages("tigris")
 library(tigris) #for polygon shape file
-devtools::install_version("wordcloud2", version = "0.2.0", repos = "https://cran.r-project.org")
+#devtools::install_version("wordcloud2", version = "0.2.0", repos = "https://cran.r-project.org")
 library(wordcloud2)
 # if(!require(magrittr)) install.packages("magrittr")
 # if(!require(dplyr)) install.packages("dplyr")
@@ -45,8 +45,8 @@ library(wordcloud2)
 # if(!require(shinydashboard)) install.packages("shinydashboard")
 # if(!require(shinythemes)) install.packages("shinythemes")
 # if(!require(tigris)) install.packages("tigris")
-r["CRAN"] = "http://cran.us.r-project.org"
-options(repos = r)
+#r["CRAN"] = "http://cran.us.r-project.org"
+#options(repos = r)
 library(dplyr)
 library(tidyverse)
 library(XML)
@@ -61,22 +61,22 @@ library(hrbrthemes)
 library(plotly)
 library(RgoogleMaps)
 library(ggmap)
-install.packages("maps")
-install.packages("tmap")
+#install.packages("maps")
+#install.packages("tmap")
 library(tmap)
-install.packages('rgeos')
+#install.packages('rgeos')
 library(devtools)
-install.packages('leaflet')
+#install.packages('leaflet')
 library('scales')
-install.packages('DT')
+#install.packages('DT')
 library(DT)
-install.packages('treemap')
-install.packages('highcharter')
+#install.packages('treemap')
+#install.packages('highcharter')
 library(highcharter)
 library(treemap)
 library(leaflet.providers)
 library(leaflet)
-install.packages('quantmod')
+#install.packages('quantmod')
 library(quantmod)
 
 
@@ -139,7 +139,7 @@ repay_rate_ave <- sc_repay %>%
   ggtitle("Cohort Performance in First Year of Repayment") +
   xlab("\nFiscal Cohort Year") + ylab("Average Proportion of Fiscal Cohort\nto Decline Loan Balance\n") +
   labs(caption = "\n*Fiscal Cohort: group of students who begin repaying their loans in the same year") +
-  scale_color_brewer(name = "Family Income:", labels = c("High", "Medium", "Low"), palette = "greenScale", direction = -1) +
+  scale_color_brewer(name = "Family Income:", labels = c("High", "Medium", "Low"), palette = "Greens", direction = -1) +
   scale_y_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
   scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1)) +
   ourtheme
@@ -160,7 +160,7 @@ repay_rate_dist <- sc_repay %>% filter(years_since_entering_repay == 1) %>%
   # labels
   ggtitle("Proportion of University Fiscal Cohorts Whose Loan\nBalances Declined in Year One of Repayment\n") +
   ylab("Fiscal Cohort\n") + xlab(NULL) +
-  scale_fill_brewer(name = "Family Income:", labels = c("High", "Middle", "Low"), palette = "greens", direction = -1) +
+  scale_fill_brewer(name = "Family Income:", labels = c("High", "Middle", "Low"), palette = "Greens", direction = -1) +
   scale_x_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
   scale_x_continuous(labels = scales::percent_format()) +
   guides(fill = guide_legend(reverse = TRUE)) +
@@ -442,7 +442,7 @@ TweetsMap <- leaflet() %>%
                     icon= icons,
                     popup = popup_sb2,
                     group = 'Selective Institutions') %>%
-  addLegend(position = 'bottomright',
+  leaflet::addLegend(position = 'bottomright',
             title = 'Selectivity',
             pal = ppal2,
             values = SelSchools$Selectivity,
@@ -456,7 +456,7 @@ TweetsMap <- leaflet() %>%
              stroke = TRUE,
              group = 'Twitter Sentiments',
              fillOpacity = 1) %>%
-  addLegend(position = "bottomleft",
+  leaflet::addLegend(position = "bottomleft",
             title = "Average Sentiment Score",
             pal = ppal,
             values = states_shape_tweets$Avg.Sentiment,
