@@ -6,7 +6,8 @@
 library(tidyverse)
 library(ggplot2)
 library(ggridges)
-
+library(RColorBrewer)
+#setwd("~/sp21dv/final_project/Group_G_HigherEd/src/shiny")
 ## import data
 load("data/sc_repay.Rdata")
 
@@ -41,7 +42,7 @@ repay_rate_ave <- sc_repay %>%
   ggtitle("Cohort Performance in First Year of Repayment") +
   xlab("\nFiscal Cohort Year") + ylab("Average Proportion of Fiscal Cohort\nto Decline Loan Balance\n") +
   labs(caption = "\n*Fiscal Cohort: group of students who begin repaying their loans in the same year") +
-  scale_color_brewer(name = "Family Income:", labels = c("High", "Medium", "Low"), palette = "greenScale", direction = -1) +
+  scale_color_brewer(name = "Family Income:", labels = c("High", "Medium", "Low"), palette = "Greens", direction = -1) +
   scale_y_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
   scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1)) +
   ourtheme
@@ -62,7 +63,7 @@ repay_rate_dist <- sc_repay %>% filter(years_since_entering_repay == 1) %>%
   # labels
   ggtitle("Proportion of University Fiscal Cohorts Whose Loan\nBalances Declined in Year One of Repayment\n") +
   ylab("Fiscal Cohort\n") + xlab(NULL) +
-  scale_fill_brewer(name = "Family Income:", labels = c("High", "Middle", "Low"), palette = "greens", direction = -1) +
+  scale_fill_brewer(name = "Family Income:", labels = c("High", "Middle", "Low"), palette = "Greens", direction = -1) +
   scale_x_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
   scale_x_continuous(labels = scales::percent_format()) +
   guides(fill = guide_legend(reverse = TRUE)) +
@@ -92,3 +93,5 @@ repay_rate_dist <- sc_repay %>% filter(years_since_entering_repay == 1) %>%
 
 
 ### UI ###
+
+### Server ###
