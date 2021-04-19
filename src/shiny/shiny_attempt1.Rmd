@@ -13,6 +13,8 @@ library(shinydashboard)
 library(tidyverse)
 library(ggridges)
 library(leaflet)
+
+source("app.R")
 ```
 
 
@@ -49,9 +51,25 @@ ui <- dashboardPage(
         fluidPage(
           tags$div(
             tags$h1("Repayment Rates")),
-          wellPanel(plotOutput("final")),
-          wellPanel(plotOutput("violin")),
-          wellPanel(plotOutput("ggridges")),
+          fluidRow(align = "left",
+                   column(7, plotOutput("repay_rate_ave")),
+                   column(3, p("This first figure demonstrates the proportion of students across all University
+                               fiscal cohorts who successfully make progress on repaying their loans in their
+                               first year of repayment.  It highlights a declining average trend across all three income
+                               brackets: smaller proportions of successive fiscal cohorts decline their loan
+                               balances over time.  While the average fiscal cohort may be having more difficulty in
+                               repaying their loans, we can look to the distribution of repayment rates across
+                               universities in order to determine whether or not income brackets have been impacted
+                               differently over time.")),
+                   br())),
+          fluidRow(align = "left",
+                   column(3, p("This density plot demonstrates the distribution of repayment proportions across
+                   universities for the first year of repayment for recent fiscal cohorts.  Each unviersity's fiscal 
+                   cohort is then further subdivided by income bracket (such that there can be as many as three 
+                   datapoints per university).  This reaffirms the findings in the previous plot, but also indicates
+                   that the lowest income bracket has experienced the largest decrease in proportions of students who
+                   make progress on their loans.")),
+                   column(7, plotOutput("repay_rate_dist"))),
           tags$div(
             tags$h1("Student Debt")
           )
@@ -66,76 +84,14 @@ ui <- dashboardPage(
 
 server <- function(input, output) {
   library(tidyverse)
-  output$final <- renderPlot({
-
-      sc_repay %>%
-      filter(years_since_entering_repay == 1, repay_rate > 0) %>%
-      
-      # plot
-      ggplot(aes(x = repay_rate, y = fct_rev(factor(cohort_year)), fill = stat(x))) +
-      scale_fill_distiller(name = "Repay Rate", palette = "greens") +
-      ggridges::geom_density_ridges_gradient(scale = 2, alpha = 0.50) +
-      
-      # labels
-      ggtitle("Proportion of University Fiscal Cohorts Whose Loan\nBalances Declined in Year One of Repayment\n") +
-      ylab("Fiscal Cohort Year\n") + xlab(NULL) +
-      scale_x_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
-      scale_x_continuous(labels = scales::percent_format()) +
-      ourtheme + theme(legend.position = "none")
+  output$repay_rate_ave <- renderPlot({
+    repay_rate_ave
     
   })
   
-  output$violin <- renderPlot({
-    
-    sc_repay %>%
-      pivot_longer(cols = c("repay_rate_lowincome", "repay_rate_midincome", "repay_rate_highincome"),
-               names_to = "class", values_to = "rates") %>%
-      filter(rates > 0) %>%
-      mutate(class = factor(class, levels =
-                          c("repay_rate_highincome", "repay_rate_midincome", "repay_rate_lowincome"))) %>%
-      
-      ggplot(aes(x = year, y = rates, group = cohort_year, fill = class)) +
-      geom_violin(color = "lightgray") + facet_grid(. ~ class) +
-      ggthemes::theme_tufte() + # add base theme first and then modify
-      theme(panel.spacing = unit(1, "cm"),
-            panel.border = element_rect(colour = "lightgray", fill=NA, size=1),
-            legend.position = "bottom",
-            plot.title = element_text(hjust=0.5),
-            strip.text.x = element_blank(), axis.ticks = element_blank()) +
-      
-      ## labels
-      ggtitle("Fraction Of Students In Successive Fiscal Cohorts\nWhose Loan Balances Have Declined") +
-      xlab(NULL) + ylab(NULL) +
-      scale_fill_viridis_d(name = "Income Range:", labels = c("High Income", "Middle Income", "Low Income")) +
-      ## percents
-      scale_y_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
-      scale_y_continuous(labels = scales::percent_format())
-    
-  })
-  
-  output$ggridges <- renderPlot({
-    
-    sc_repay %>% mutate(opeid = as.integer(opeid)) %>%
-      left_join(selectivity, by = c("opeid" = "OPEID")) %>%
-      filter(years_since_entering_repay == 1) %>%
-      select(repay_rate, uni_rank, cohort_year, year, opeid) %>%
-      mutate(admission_half = ifelse(uni_rank %in% c("elite", "highly selective", "more selective"), 1, 0)) %>%
-      na.omit() %>%
-      
-      filter(repay_rate > 0, uni_rank != "not selective") %>%
-  
-      # plot
-      ggplot(aes(x = repay_rate, y = fct_rev(factor(cohort_year)), fill = uni_rank)) +
-      ggridges::geom_density_ridges(scale = 2, color = "darkgray", alpha = 0.50) +
-      
-      # labels
-      ggtitle("Proportion of University Fiscal Cohorts\nWhose Loan Balances Declined") +
-      ylab("Fiscal Cohort\n") + xlab(NULL) +
-      scale_fill_viridis_d(name = "Selectivity:", labels = c("Less", "Selective", "More", "Highly"), direction = 1) +
-      scale_x_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
-      scale_x_continuous(labels = scales::percent_format()) +
-      ourtheme
-  })
+  output$repay_rate_dist <- renderPlot({
+    repay_rate_dist
+    })
 }
 
 shinyApp(server = server, ui = ui)
