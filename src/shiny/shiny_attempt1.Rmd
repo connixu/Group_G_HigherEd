@@ -17,22 +17,6 @@ library(leaflet)
 
 
 ```{r}
-ui <- fluidPage(title = "Random generator",
-  tabsetPanel(              
-    tabPanel(title = "Final",
-      plotOutput("final")),
-    navbarMenu(title = "other versions",
-    tabPanel(title = "Uniform data",
-      plotOutput("violin")),
-    tabPanel(title = "Chi Squared data",
-      plotOutput("ggridges"))
-     )
-  )
-)
-
-```
-
-```{r}
 ui <- dashboardPage(
   dashboardHeader(title = "Group G: Student Debt"),
   dashboardSidebar(
@@ -79,29 +63,6 @@ ui <- dashboardPage(
     )
   )
 )
-
-
-#server <- function(input, output) { }
-
-shinyApp(ui, server)
-```
-
-```{r}
-ui <- fluidPage(title = "practice",
-                navlistPanel(
-                  "About",
-                  tabPanel("Project Motivation"),
-                  tabPanel("Data"),
-                  tabPanel("Team Members"),
-                  "Data Visuals",
-                  tabPanel("Repayment Rates",
-                           plotOutput("final"),
-                           plotOutput("violin"),
-                           plotOutput("ggridges")),
-                  tabPanel("Student Debt"),
-                  tabPanel("Loan Forgiveness Tweets"),
-                  widths = c(5,10)
-  ))
 
 server <- function(input, output) {
   library(tidyverse)
