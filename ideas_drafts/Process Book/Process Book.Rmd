@@ -5,13 +5,14 @@ date: "3/18/2021"
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r packages, results="hide"}
+```{r packages, echo=FALSE, results="hide", warning=FALSE}
 r = getOption("repos")
 r["CRAN"] = "http://cran.us.r-project.org"
 options(repos = r)
@@ -47,21 +48,23 @@ suppressMessages(library(devtools))
 devtools::install_github("rstudio/leaflet")
 ```
 ## Introduction & Motivation
-At the end of this March, President Biden announced the cancellation of 1.3 billion dollar of student loans, accompanying with a clearer picture of his overall plan on student loan. While he canceled in total of 2.3 billion dollar of student loans for more than 110,000 student loan borrowers and received much appraise from the group, the reaction among all the Americans on this controversial issue has been quiet different. Therefore, in this project, our team want to investigate further on why student loan becomes a serious problem here in US, as well as how people in US has reacted to the issue based on their talk on social media platform. 
 
-As discussed in other sections of our repository, this project sought to explore a factors related to socioeconomic conditions, student debt, inequities, and policy. This was a really broad topic so we did a decent amount of exploration of the data prior to deciding on a more specific topic. We tried to focus on specific aspects of the student loan issue including university selectivity, family income, repayment rate over time, and the regional difference of debt amount to understand why student debt becomes a more and more serious problem that people in US now are highly concern with. After understanding the issue and recognizing the problem, we then use the information from Google trend and Twitter platform to see how people reacted and talked about it.
+   After Biden's recent announcement of a federal student laon cancellation program, many people are pushing for universal student laon forgiveness. However, there's still a lot of uncertainty in this area. Looking at this topic from both a historical and a socioeconomic perspective would shed light on the contemporary discussion of student loan forgiveness policy. 
+
+   This project explores how student debt and its repayment rate interact with socioeconomic conditions. This was a really broad topic so we did a decent amount of data exploration before zooming in our research focus. The project involves three parts. First, We tried to focus on specific aspects of the student loan issue including university selectivity, family income, repayment rate over time, and the regional difference of debt amount to understand why student debt becomes a more and more serious problem that people in US now are highly concerned with. After looking at the historical data, we also want to understand the current discussion on student loan forgiveness in light of the Biden administration's recent announcement of a $1 Billion cancellation in student loans. Specifically, we looked at the tweets keywords and examined if there's an overlap between states that are most concerned about student debt and where the selective schools are located in the US.  
+   
 
 ## The Data 
 ### College Scorecard 
 We worked with the 2019 College Scorecard (and with the 2010-2019 College Scorecard) to look at some trends that we thought would be interesting. The following is the dataset and some basic columns added to it for our analysis work. One way we did this was through attaining and concatenating the College Scorecard data as directly downloaded from the NCES. Below are the columns we selected for this: 
 
-```{r csv load, results="hide"}
+```{r csv load, results="hide", warning= FALSE, echo=FALSE}
 # Set the WD as Group_G_HigherEd 
-setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd")
+#setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd")
 
 # While our initial College Scorecard only included 2019 initially, I was able to run a simple python script to concatenate and select a small number of relevant columns for our visualization and analysis. Thus, as our first visualizations only unclude 2019, the code below is for re-filtering the concatenated 2010-2019 data back into simply 2019. 
 
-sc_time <- read_csv('src/2010_2019_student_debt.csv') 
+sc_time <- read_csv('~/Documents/GitHub/DataVisualization/Group_G_HigherEd/src/shiny/data/2010_2019_student_debt.csv') 
 sc <- sc_time %>% filter(Year_Ending == 2019)
 
 # Renaming Latitude and Longitude Columns for later use 
@@ -102,7 +105,7 @@ sc <- sc %>%
 | ADM_RATE_ALL_1           | Admission Rate by OPE ID (not used in the end)            | 
 | Year, Year_Starting, Year_Ending | Year Starting (twice due to how the data was read in) and Year Ending period covered by the scorecard | 
 
-```{r initial map matching, echo = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
+```{r initial map matching, echo = FALSE, eval = TRUE, warning = FALSE, message = FALSE}
 us <- map_data("state")
 us_states <- as_data_frame(us) %>% dplyr::rename(state=region)
 
@@ -147,7 +150,7 @@ Because our project focuses on student debt and socioeconomic status and economi
   - Less Selective (70%+ admissions rate)  
   
 These categories were then plotted to show median student debt of each institution. 
-```{r competitiveness_student_debt, echo=TRUE,eval=TRUE, message=FALSE,warning=FALSE}
+```{r competitiveness_student_debt, echo=FALSE,eval=TRUE, message=FALSE,warning=FALSE}
 sc_sub <- sc %>% subset(DEBT_MDN != 'PrivacySuppressed') %>% drop_na(uni_rank) %>% drop_na(DEBT_MDN)
 sc_sub$uni_rank_cat = factor(sc_sub$uni_rank, levels=c('elite','highly selective','selective','less selective','not selective'))
 
@@ -177,7 +180,7 @@ Thus, based on this preliminary visual, we made a number of adjustments:
 
 We also considered showing the distribution as a box / violin plot (see below), however, we concluded that it did not provide enough additional information and did not show the trends we are trying to highlight as clearly as I intended (namely, that elite and highly selective schools generally exhibited lower levels of median student debt). 
 
-```{r warning=F, message=F}
+```{r warning=F, message=F, echo=FALSE}
 #setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd/ideas_drafts/Process Book")
 knitr::include_graphics("Images/Violin_Connie.png")
 ```
@@ -200,9 +203,13 @@ In order to understand whether or not students are having more trouble with thei
 This means that each university has multiple observations for each cohort_year (on each year of their repayment), and the same information as divided by income bracket.  And, this information was presented as either the numerator or the proportion of the all students to enter the repayment phase of their student loans.  
   
 Therefore, we wanted to visualize the variation in proportion of students to make progress on their loans over time.  And so, we took the median repayment rate for each cohort year in their first year of repayment and made the below plot:  
-```{r warning=F, message=F}
-knitr::include_graphics("../../src/visuals/repay_rate_files/figure-html/repay_rate_ave_draft-1.png")
+
+
+```{r warning=F, message=F, echo=FALSE}
+knitr::include_graphics("Images/repay_rate_ave_draft-1.png")
 ```
+
+
 But, in order to control for variation in the number of students across schools, I remade the plot by
 
 1. finding the denominator (total number of students in a cohort by income bracket)
@@ -219,26 +226,30 @@ In addition to modifying the calculations, I made some changes in the visual rep
 4. added notation to explain a fiscal cohort.
 
 These changes yielded the below plot:
-```{r warning=F, message=F}
-knitr::include_graphics("../../src/visuals/repay_rate_files/figure-html/repay_rate_ave-1.png")
+
+
+```{r warning=F, message=F, echo=FALSE}
+knitr::include_graphics("Images/repay_rate_ave-1.png")
 ```
 
 ### Twitter Sentiment Across States
 
   The Google trend website gives us data about the time and the count of the total number of searches on Google. Plotting the total number of searches over time helps us to see changes in people's interest in student loan forgiveness. The pattern clearly shows that people's interest in this topic has spiked in 2021. We hypothesized that this is a result of the Biden administration's recent announcement of a reinterpretation of a federal student loan cancellation program which will result in $1 billion in student loan forgiveness. Ever since this announcement, more people have been pushing for a more progressive policy and asking President Biden to cancel student debt through executive action. However, there is still a lot of uncertainties around whether a universal student loan forgiveness will be initiated via executive order or legislation. 
   
-```{r warning=F, message=F}
-knitr::include_graphics("Image/Twitter_Trend.png")
+```{r warning=F, message=F, echo=FALSE}
+knitr::include_graphics("Images/Twitter_Trend.png")
 ```
   
   When looking at the extracted words and associated sentiments, we looked first at some of the most frequent words (and their cntribution to the seniment score of the tweet itself): 
-```{r warning=F, message=F}
+  
+  
+```{r warning=F, message=F, echo=FALSE}
 knitr::include_graphics("Images/Tweets_Student_Debt_Ariel.png")
 ```
   
   We decided that the above bar graph could be better expressed differently (either through a map or through a wordcloud) and tried to do this instead.  
 
-```{r warning=F, message=F}
+```{r warning=F, message=F, echo=FALSE}
 knitr::include_graphics("Images/WordCloud_Ariel.png")
 ```
   
@@ -246,22 +257,26 @@ knitr::include_graphics("Images/WordCloud_Ariel.png")
 
   The modified wordcloud map shows key words that appeared in the tweets data. The size of the word represents how frequent it appears in tweets. Some of the most noticeable ones include people, president, loans, job, college, pay, biden, education, studentloanforgiveness, etc.
 
-```{r warning=F, message=F}
-knitr::include_graphics("Image/WordCloud.png")
+
+```{r warning=F, message=F, echo=FALSE}
+knitr::include_graphics("Images/WordCloud.png")
 ```
+
 
 Below is the initial choropleth map we wanted to put in our project. It shows the distribution of average sentiment score in each state. The popup window shows the state, the associated average sentiment score, the total word counts, and the top tweets keywords. Darker color means the state has a higher average sentiment score.  
 
-```{r warning=F, message=F}
-knitr::include_graphics("Image/choropleth_sentiment.png")
+
+```{r warning=F, message=F, echo=FALSE}
+knitr::include_graphics("Images/choropleth_sentiment.png")
 ```
+  
   
   We scrapped these in part because the Chloropleth itself (with statewide sentiment score) was once again not very informative as it does not end up adding to our story even about how people generally are feeling. We don't have enough information from this map about how people are feeling in different parts of the country, and it's harder to conceptualize or understand the sentiment score itself (for the viewer) in a salient way. 
   
 ### Appendix: Trends Explored and Scrapped
 
 #### Student Debt and Racial Composition 
-```{r debt_race, echo=TRUE,eval=TRUE, message=FALSE,warning=FALSE}
+```{r debt_race, echo=FALSE,eval=TRUE, message=FALSE,warning=FALSE}
 #dfsub %>% group_by(uni_rank) mutate(density = n()) 
 
 m <- ggplot(sc_sub, aes(x=DEBT_MDN,y=UGDS_BLACK, color = uni_rank_cat)) +
@@ -284,18 +299,13 @@ m
 
   Finally, we tried to take our tweet data and look at the frequency of the positive and negative words over time. After looking at this information, we noted that it did not add anything to our current information (as again sentiment scores can be abstract, and there were no trends based on sentiment identified); we chose not to include or develop these further.
   
-```{r warning=F, message=F}
+```{r warning=F, message=F, echo=FALSE}
 knitr::include_graphics("Images/Sentiment_Words_Ariel.png")
 knitr::include_graphics("Images/Positive_Words_Ariel.png")
 knitr::include_graphics("Images/Negative_Words_Ariel.png")
 ```
 
-## General Decisions  
-  We tried to follow the principles we learned in class throughout our work. Specifically, we tried to show data comparatively, 
 
-### Challenges  
-  Some challenges we encountered included:  
-  - We ha
 
 ---  
 [1] - Conwell, Jordan A. and Natasha Quadlin. Forthcoming. “Race, Gender,Higher Education, and Socioeconomic Attainment: Evidence from Baby Boomers at Mid-Life.” Social Forces. DOI: 10.1093/sf/soab010.
