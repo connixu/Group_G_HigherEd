@@ -128,8 +128,7 @@ install.packages('highcharter')
 library(highcharter)
 library(treemap)
 
-sc_dt %>% dplyr::mutate(Description=paste(`University Selectivity`, '\n',`Number of Universities`,'Universities'), sep ="\n") %>%
-  treemap(index="Description",
+sc_dt %>% dplyr::mutate(Description=paste(`University Selectivity`, '\n',`Number of Universities`,'Universities'), sep ="\n") %>% highcharter::treemap(index="Description",
           vSize="Number of Universities",
         type="index",
         fontsize.labels=c(12, 8), 
@@ -382,7 +381,7 @@ sc_time
 
 ```{r}
 setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd")
-sc_time <- read_csv('src/2010_2019_student_debt.csv') 
+sc_time <- read_csv('src/shiny/data/2010_2019_student_debt.csv') 
 sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
   transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
   dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) %>% 
@@ -397,10 +396,8 @@ ui <- fluidPage(
   # 'Year',
   # choices=c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)), 
   sliderInput(inputId = "year",
-  label = "Year",
-  value = c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)),
+  label = "Year", value=2019,min=2010,max=2019,sep=''),
   leafletOutput("studentdebtmap")
-
 )
 
 server <- function(input, output, session){
@@ -408,7 +405,6 @@ server <- function(input, output, session){
     sc_time_selective <- reactive({sc_time %>% subset(Year_Ending == input$year) %>% 
         group_by(STABBR) %>% mutate(`Average Student Loans`=sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>%
         group_by(STABBR,`Average Student Loans`) %>% summarize()})
-    library(tigris)
     states <- states(cb = TRUE)
     states_year <- reactive({states %>% inner_join(sc_time_selective(), by=c(STUSPS='STABBR'))}) 
     
