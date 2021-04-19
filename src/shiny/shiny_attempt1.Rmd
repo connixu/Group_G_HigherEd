@@ -72,7 +72,7 @@ ui <- dashboardPage(
                                repaying their loans, we can look to the distribution of repayment rates across
                                universities in order to determine whether or not income brackets have been impacted
                                differently over time.")), style='padding:5px;'),
-                   br())),
+                   br()),
           fluidRow(align = "left",
                    column(4, wellPanel(p("This density plot demonstrates the distribution of repayment proportions across
                    universities for the first year of repayment for recent fiscal cohorts.  Each unviersity's fiscal 
@@ -84,8 +84,18 @@ ui <- dashboardPage(
           tags$div(
             tags$h1("Student Debt", align = "center")),
         fluidRow(align = "left",
-                 column(5, wellPanel(dataTableOutput("table"))))
-        ),
+                 column(12, wellPanel(DTOutput("table")))),
+                 #column(4, wellPanel(highcart2Output("treemap")))), # finish output function
+        fluidRow(align = "left",
+                 column(5, wellPanel(p("Connie put explanation here.")))),
+        fluidRow(align = "left",
+                 column(5, wellPanel(plotOutput("admissions_scatter")))),
+        fluidRow(align = "left",
+                 column(12, wellPanel(plotlyOutput("plotly")))),
+        fluidRow(column(12, wellPanel(sliderInput(inputId = "year",
+                                                  label = "Year",
+                                                  value = c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019))))),
+        fluidRow(column(12, wellPanel(leafletOutput("studentdebtmap")))))),
       tabItem(tabName = "tweets", class = "active",
           fluidPage(
             fluidRow(align = "left",
@@ -165,8 +175,23 @@ server <- function(input, output) {
   
   # Connie ~~~~~~~~~~~~~~~~~~~~~~~
   
-  output$table <- renderDataTable({
+  output$table <- renderDT(
     table_1
+  )
+  
+  #output$treemap <- renderHighchart2(
+  #  treemap
+  #)
+  output$admissions_scatter <- renderPlot({
+    admissions_scatter
+  })
+  
+  output$plotly <- renderPlotly({
+    plot_line_plotly
+  })
+  
+  output$leaflet <- renderLeaflet({
+    # put it here
   })
   
 }
