@@ -44,8 +44,10 @@ suppressMessages(library(devtools))
 # Let's install the development version from Github. Run
 devtools::install_github("rstudio/leaflet")
 ```
-## Introduction 
-As discussed in other sections of our repository, this project sought to explore a factors related to socioeconomic conditions, student debt, inequities, and policy. This was a realy broad topic so we did a decent amount of exploration of the data prior to deciding on a more specific topic. 
+## Introduction & Motivation
+At the end of this March, President Biden announced the cacellation of 1.3 billion dollar of student loans, accompanying with a clearer picture of his overall plan on student loan. While he cancelled in total of 2.3 billion dollar of student loans for more than 110,000 student loan borrowers and received much apprais from the group, the reaction among all the Americans on this controversial issue has been quiet different. Therefore, in this project, our team want to investigate further on why student loan becomes a serious problem here in US, as well as how people in US has reacted to the issue based on their talk on social medis platform. 
+
+As discussed in other sections of our repository, this project sought to explore a factors related to socioeconomic conditions, student debt, inequities, and policy. This was a really broad topic so we did a decent amount of exploration of the data prior to deciding on a more specific topic. We tried to focus on spefic aspects of the student loan issue including university selectivity, family income, repayment rate over time, and the regional differnce of debt amount to understand why student debt becomes a more and more serious problem that people in US now are highly concern with. After understanding the issue and recognizing the problem, we then use the information from Google trend and Twitter platform to see how people reatced and talked about it.
 
 ## The Data 
 ### College Scorecard 
@@ -113,6 +115,9 @@ ggplot(us,  aes(x = long, y = lat, group=group)) +
 
   We also looked at data using the R package developed by the Urban Institute; specifically, we examined factors such as repayment rates. 
 
+### Google Trend
+
+To see the whether people has concerned on the topic about student debt over time, we looked at the Google trend as well that can be used as an evidence of whether the topic is heated among the people in US. Based on the result we saw the number of searches towards the term 'student loan forgiveness' has raised over the recent years and spiked in the recent month, which we assume due to Biden's recent bill about student debt cancellation. 
 
 ### Twitter Dataset  
 
