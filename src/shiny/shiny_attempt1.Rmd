@@ -82,20 +82,23 @@ ui <- dashboardPage(
                    make progress on their loans."))),
                    column(8, wellPanel(plotOutput("repay_rate_dist")))),
           tags$div(
-            tags$h1("Student Debt", align = "center")),
+            tags$h1("University Selectivity and Student Debt", align = "center"),
+            tags$h3("University Selectivity")),
         fluidRow(align = "left",
-                 column(12, wellPanel(DTOutput("table")))),
+                 column(7, wellPanel(DTOutput("table"))),
+                 column(5, wellPanel(p("Connie explains data table.")))),
                  #column(4, wellPanel(highcart2Output("treemap")))), # finish output function
         fluidRow(align = "left",
-                 column(5, wellPanel(p("Connie put explanation here.")))),
-        fluidRow(align = "left",
-                 column(5, wellPanel(plotOutput("admissions_scatter")))),
+                 column(4, wellPanel(p("Connie explains admissions_scatter"))),
+                 column(8, wellPanel(plotOutput("admissions_scatter")))),
         fluidRow(align = "left",
                  column(12, wellPanel(plotlyOutput("plotly")))),
-        fluidRow(column(12, wellPanel(sliderInput(inputId = "year",
+        fluidRow(column(4, wellPanel(sliderInput(inputId = "year",
                                                   label = "Year",
-                                                  value = c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019))))),
-        fluidRow(column(12, wellPanel(leafletOutput("studentdebtmap")))))),
+                                                  value = 2019, min = 2010, max = 2019, sep = ''))),
+                 column(8, wellPanel(p("Connie explains the plotly."))),
+                 column(12, wellPanel(leafletOutput("studentdebtmap")))),
+        fluidRow(column(12, wellPanel(p("Connie explainst the map")))))),
       tabItem(tabName = "tweets", class = "active",
           fluidPage(
             fluidRow(align = "left",
@@ -190,8 +193,42 @@ server <- function(input, output) {
     plot_line_plotly
   })
   
-  output$leaflet <- renderLeaflet({
-    # put it here
+  
+# connie map prep code data wrangle
+  sc_time_selective <- reactive({sc_time %>% subset(Year_Ending == input$year) %>%
+      group_by(STABBR) %>% mutate(`Average Student Loans`=sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>%
+      group_by(STABBR,`Average Student Loans`) %>% summarize()})
+  states <- states(cb = TRUE)
+  states_year <- reactive({states %>% inner_join(sc_time_selective(), by=c(STUSPS='STABBR'))}) 
+  
+# render output
+  output$studentdebtmap <- renderLeaflet({
+    pal = colorFactor('Greens', domain = states_year()$`Average Student Loans`)
+    pop_pop <- paste("State:",states_year()$NAME,"<br/>",
+                     "Average Student Loans","<br/>", "of Schools Located in State:",
+                     paste('$',round(states_year()$`Average Student Loans`)))
+    
+    sc_time_selective_title <- tags$p(tags$style('p{color:gray; font-size: 14px; family: serif}'),
+                                      tags$b('Average Debt By State (2019)'))
+    leaflet(states_year()) %>% addProviderTiles("CartoDB.Positron") %>%
+      addPolygons(fillColor = ~pal(states_year()$`Average Student Loans`),
+                  color = "white",
+                  weight = 0.5,
+                  fillOpacity = 0.7,  
+                  highlight = highlightOptions(
+                    weight = 5,
+                    color = "#666",
+                    fillOpacity = 0.7,
+                    bringToFront = TRUE,
+                  ),popup=pop_pop) %>% leaflet::addLegend(position = "bottomleft", colors =c("#EDF8E9","#BAE4B3","#74C476","#31A354","#006D2C"), 
+                                                 labels = c(paste('$',round(min(states_year()$`Average Student Loans`)))," "," "," ", 
+                                                            paste('$',round(max(states_year()$`Average Student Loans`)))),
+                                                 title = "Average Student Loans (Per Student)") %>%
+      leaflet::setView(-98.5795, 39.8282, zoom=3) %>% addControl(sc_time_selective_title, position='topright')
+  })
+# observe leaflet output  
+  observe({
+    leafletProxy("studentdebtmap", data = states_year())
   })
   
 }
