@@ -12,6 +12,7 @@ library(shiny)
 library(shinydashboard)
 library(tidyverse)
 library(ggridges)
+library(leaflet)
 ```
 
 
@@ -37,19 +38,39 @@ ui <- dashboardPage(
   dashboardSidebar(
     sidebarMenu(
       menuItem("About", tabName = "about"),
-      menuItem("Student Debt", tabName = "debt"),
+      menuItem("Student Loans", tabName = "loans"),
       menuItem("What do people think?", tabName = "tweets")
     )
   ),
   dashboardBody(
     tabItems(
       tabItem(tabName = "about", class = "active",
-              fluidPage()),
-      tabItem(tabName = "debt", class = "active",
+              fluidPage(
+                tags$div(
+                  tags$h1("Project Motivation"),
+                  "Biden's recent loan forgiveness bill has sparked much debate.  And so, we decided to investigate student
+                  repayment rates and student debt over time.  Then, we look at what people are saying and where they are saying it.",
+                  tags$h1("Sources"),
+                  "For our project, we looked at data from the following sources:
+                  (1) Scorecard, (2) Urban Institute Education Data, (3) Twitter API, and (4) Google Trends",
+                  tags$h1("Team Members"),
+                  "Here, we can list a little infor about ourselves",
+                  tags$h3("Arielle Herman"), "Arielle's email address",
+                  tags$h3("Connie Xu"), "Connie's awesome...",
+                  tags$h3("Grace Li"), "Grace is awesome...",
+                  tags$h3("Ariel Luo"), "Ariel is awesome..."
+                )
+              )),
+      tabItem(tabName = "loans", class = "active",
         fluidPage(
+          tags$div(
+            tags$h1("Repayment Rates")),
           wellPanel(plotOutput("final")),
           wellPanel(plotOutput("violin")),
-          wellPanel(plotOutput("ggridges"))
+          wellPanel(plotOutput("ggridges")),
+          tags$div(
+            tags$h1("Student Debt")
+          )
         )
       ),
       tabItem(tabName = "tweets", class = "active",
@@ -159,50 +180,3 @@ server <- function(input, output) {
 shinyApp(server = server, ui = ui)
 
 ```
-This R Markdown document is made interactive using Shiny. Unlike the more traditional workflow of creating static reports, you can now create documents that allow your readers to change the assumptions underlying your analysis and see the results immediately. 
-
-To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
-
-## Inputs and Outputs
-
-You can embed Shiny inputs and outputs in your document. Outputs are automatically updated whenever inputs change.  This demonstrates how a standard R plot can be made interactive by wrapping it in the Shiny `renderPlot` function. The `selectInput` and `sliderInput` functions create the input widgets used to drive the plot.
-
-```{r eruptions, echo=FALSE}
-inputPanel(
-  selectInput("n_breaks", label = "Number of bins:",
-              choices = c(10, 20, 35, 50), selected = 20),
-  
-  sliderInput("bw_adjust", label = "Bandwidth adjustment:",
-              min = 0.2, max = 2, value = 1, step = 0.2)
-)
-
-renderPlot({
-  hist(faithful$eruptions, probability = TRUE, breaks = as.numeric(input$n_breaks),
-       xlab = "Duration (minutes)", main = "Geyser eruption duration")
-  
-  dens <- density(faithful$eruptions, adjust = input$bw_adjust)
-  lines(dens, col = "blue")
-})
-```
-
-## Embedded Application
-
-It's also possible to embed an entire Shiny application within an R Markdown document using the `shinyAppDir` function. This example embeds a Shiny application located in another directory:
-
-```{r tabsets, echo=FALSE}
-shinyAppDir(
-  system.file("examples/06_tabsets", package = "shiny"),
-  options = list(
-    width = "100%", height = 550
-  )
-)
-```
-
-Note the use of the `height` parameter to determine how much vertical space the embedded application should occupy.
-
-You can also use the `shinyApp` function to define an application inline rather then in an external directory.
-
-In all of R code chunks above the `echo = FALSE` attribute is used. This is to prevent the R code within the chunk from rendering in the document alongside the Shiny components.
-
-
-
