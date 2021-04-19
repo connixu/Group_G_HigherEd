@@ -38,7 +38,7 @@ Term: Spring 2021
 		├── process_book_images
 	├── proposal 
 ### references/
-### references/
+	├── lit review 
 
 ## Project Description: 
 
