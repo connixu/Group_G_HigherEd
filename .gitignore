@@ -1,4 +1,4 @@
-src/data/CollegeScorecard_Raw_Data_01192021.zip
-src/data/*.zip
-src/data/census_data*
-src/data
+#src/data/CollegeScorecard_Raw_Data_01192021.zip
+#src/data/*.zip
+#src/data/census_data*
+#src/data
