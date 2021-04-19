@@ -1,0 +1,185 @@
+---
+title: "Exploratory Visuals"
+author: Arielle Herman
+date: 2021-04-04
+always_allow_html: yes
+output: 
+  html_document:
+    keep_md: true
+    toc: true
+---
+
+```{r setup, message=F, warning=FALSE}
+rm(list=ls())
+knitr::opts_chunk$set(echo = TRUE)
+
+# Load packages.
+packages <- c("devtools","knitr","tidyverse","ggthemes", "ggmap", "educationdata",
+              "spData")
+
+packages <- lapply(packages, FUN = function(x) {
+  if(!require(x, character.only = TRUE)) {
+    install.packages(x)
+  library(x, character.only = TRUE)
+  }
+}
+)
+library(educationdata)
+library(spData)
+library(urbnmapr)
+library(readxl)
+library(httr)
+
+# https://github.com/UrbanInstitute/education-data-package-r
+```
+
+
+```{r lib, echo = F}
+library(shiny)
+library(DT)
+library(tidyverse)
+library(leaflet)
+library(crosstalk)
+library(educationdata)
+library(COVID19)
+library(tmap)
+library(sf)
+library(sp)
+library(tmaptools)
+```
+
+# Data
+
+## educationdata
+
+```{r data, cache=TRUE, message=F, warning=F}
+# educationdata ipeds outcome measures
+filepath <- "../data/educationdata/ipedsOutcomes2017.csv"
+## if file exists, don't make it again cuz it takes a real long time
+if(file.exists(filepath)) {
+  ipeds17 <- read_csv(filepath)
+} else {
+  ipeds17 <- get_education_data(level = 'college-university', source = 'ipeds', 
+                                topic = 'outcome-measures', filters = list(year = 2017),
+                                add_labels = TRUE)
+  write.csv(ipeds17, filepath, row.names = FALSE)
+}
+ipeds17
+```
+
+## state and county geospatial and metadata
+Some metadata from usda: https://www.ers.usda.gov/data-products/county-level-data-sets/download-data/
+
+```{r}
+# us_states from spData
+## updated as of 2015 or something
+data("us_states")
+data(us_states_df) # has poverty measures and things
+head(us_states)
+head(us_states_df)
+
+# us_counties from urbnmapr
+us_counties <- get_urbn_map("counties", sf = TRUE)
+
+# scorecard data
+sc <- read_csv('../src/data/2019_College_Scorecard_Valid_Admissions_Data.csv')
+sc
+# county level poverty data
+#usda_pov_19 <- read_xls("../data/usda/PovertyEstimates.xls", skip = 4)
+#usda_pov_19
+
+#usda
+## https://www.ers.usda.gov/data-products/county-level-data-sets/download-data/
+### poverty by county level
+url <- "https://www.ers.usda.gov/webdocs/DataFiles/48747/PovertyEstimates.xls?v=9293.8"
+GET(url, write_disk(tf <- tempfile(fileext = ".xls")))
+usda_pv <- read_xls(tf, sheet = 1, skip = 4)
+usda_pv
+```
+
+# state maps
+
+```{r states}
+## states by population
+### question: should this be scaled by area?
+us_states %>% ggplot() + geom_sf(aes(fill = total_pop_15)) +
+  scale_fill_continuous(type = "viridis", direction = -1)
+
+## states by median income in 2015
+us_states %>% left_join(us_states_df, by = c("NAME" = "state")) %>%
+  ggplot() + geom_sf(aes(fill = median_income_15)) +
+  scale_fill_continuous(type = "viridis", direction = -1)
+
+## states by median poverty level in 2015
+### does this poverty level look quite right?
+us_states %>% left_join(us_states_df, by = c("NAME" = "state")) %>%
+  ggplot() + geom_sf(aes(fill = poverty_level_15))
+```
+
+# county maps
+```{r}
+# prep data for plotting
+## check shared names
+mean(unique(usda_pv$Area_name) %in% unique(us_counties$county_name))
+## change projection of sc data
+sc_sf <- sc %>%
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.05 ~ 'elite',
+    ADM_RATE < 0.2 ~ 'highly selective',
+    ADM_RATE < 0.3 ~ 'selective',
+    ADM_RATE < 0.7 ~ 'less selective',
+    TRUE ~ 'not selective')) %>% filter(uni_rank %in% c('elite', 'highly selective')) %>%
+  select(uni_rank, LONGITUDE, LATITUDE) %>% na.omit() %>% sf::st_as_sf(coords = c("LONGITUDE", "LATITUDE"), crs = 4326)
+
+# base plot
+p <- us_counties %>% left_join(usda_pv, by = c("county_name" = "Area_name")) %>%
+  ggplot() + scale_fill_continuous(type = "viridis", direction = -1) + ggthemes::theme_tufte()
+## rural-urban continuum_code
+p + geom_sf(aes(fill = `Rural-urban_Continuum_Code_2013`), lwd = 0) +
+  geom_sf(data = us_states, color = "white", fill = NA, lwd = 0.4) +
+  ggtitle("Rural-urban Continuum Code, 2013")
+## poverty estimate of people of all ages living in poverty: PCTPOVALL_2019
+### question: how change the legend to %?
+### note: change colors so that they are easily visible
+### note: look at other patterns?
+p + geom_sf(aes(fill = PCTPOVALL_2019), lwd = 0) +
+  geom_sf(data = us_states, color = "white", fill = NA, lwd = 0.4) +
+  ggtitle("Estimated percent of people of all ages in poverty (2019)") +
+  labs(fill = "Percent") + geom_sf(data = sc_sf, aes(shape = uni_rank), color = "purple", size = 1.5)
+```
+
+# shiny attempt
+
+```{r app1}
+
+# User- Interface
+# --------------- # 
+ui <- fluidPage( 
+  plotOutput("map"),
+  plotOutput("graph"),
+  mainPanel(selectInput("uni_rank", "echelon", c("highly selective", "elite")), # Here is where the users chooses the month. Note the tag: "month" 
+  )
+)
+
+# Server
+# ------ #
+
+server <- function(input,output) {
+  output$map <- renderPlot({ # Try renderLeaflet or renderTmap
+  ggplot(merged) +
+      geom_sf(aes(fill = PCTPOVALL_2019), lwd = 0) +
+      geom_sf(data = us_states, color = "white", fill = NA, lwd = 0.4) +
+      scale_fill_continuous(type = "viridis", direction = -1) +
+      geom_sf(data = filter(sc_sf, uni_rank == input$uni_rank), aes(shape = input$uni_rank), color = "purple", size = 5)
+  })
+  
+  output$graph <- renderPlot({
+    ggplot(sc_sf, aes(x = uni_rank)) + geom_bar()
+  })
+
+}
+
+# Run the APP. 
+# ------------ # 
+shinyApp(ui = ui, server = server)
+```
