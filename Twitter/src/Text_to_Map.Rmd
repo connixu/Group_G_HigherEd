@@ -74,6 +74,8 @@ png("Twitter_Trend.png") #Saving plot to png
 dev.off()
 ```
 
+The google trend website gives us data about the time period and the count of total number of searches on Google. Plotting the total number of searches overtime helps us to see changes in people's interest in student loan forgiveness. The pattern clearly shows that people's interest in this topic has spiked in 2021. We hypothesized that this is a result of the Biden administration's recent announcement of a reinterpretation of a federal student loan cancellation program which will result in $1 billion in student loan forgiveness. Ever since this announcement, more people have been pushing for a more progressive policy and asking President Biden to cancel student debt through executive action. There is still a lot of uncertainties around whether a universal student loan forgiveness will be initiated via an executive order or via legislation. 
+
 #Convert Dataframe to corpus
 ```{r, eval= TRUE, echo=FALSE}
 # Use tm package convert dataframe to corpus: https://www.rdocumentation.org/packages/tm/versions/0.7-8/topics/DataframeSource
@@ -123,6 +125,8 @@ Twitter_wd <- wordcloud(tweets_tidy_wc$term, tweets_tidy_wc$n,
        family = "serif")
 
 ```
+
+The wordcloud map shows key words that appeared in the tweets data. The size of the word represents how frequently it appears in tweets. Some of the most noticeable ones include people, president, loans, job, college, pay, biden, education, studentloanforgiveness, etc. This keywords pattern confirms our initial hypothesis that the recent discussion on canceling student debt on twitter is around the biden administration as a result of the $1B student loan cancellation announced in Mid-march. 
 
 #Get list of top words by state
 ```{r, eval= TRUE, echo=FALSE}
@@ -218,43 +222,43 @@ states_shape_tweets <- geo_join(states, tw_state, "name", "state")
 
 #choropleth map of Twitter Sentiment across States 
 ```{r, eval= TRUE, echo=FALSE}
-# Creating a color palette based on the number range in the total column
-pal <- colorNumeric("YlOrRd", domain=states_shape_tweets$Avg.Sentiment)
-
-# Setting up the pop up text
-popup_sb <- paste0("State: ", as.character(states_shape_tweets$NAME),"<br/>",
-                  "Average Sentiment Score: ", as.character(states_shape_tweets$Avg.Sentiment),"<br/>",
-                  "Total Word Count: ",as.character(states_shape_tweets$WordCounts),"<br/>",
-                  "Top Words: ",as.character(states_shape_tweets$Terms),"<br/>")
-
-# Mapping it with the new tiles CartoDB.Positron
-leaflet() %>%
-  addProviderTiles(providers$CartoDB.Positron) %>%
-  setView(-98.483330, 38.712046, zoom = 4) %>%
-  addPolygons(data = states_shape_tweets ,
-              fillColor = ~pal(states_shape_tweets$Avg.Sentiment),
-              fillOpacity = 0.7,
-              weight = 1.5,
-              opacity = 1,
-              color = "cornsilk",
-              dashArray = "3",
-              smoothFactor = 0.2,
-              popup = ~popup_sb,
-              highlight = highlightOptions(weight = 4,
-                                           color = "#839EA8",
-                                           dashArray = "",
-                                           fillOpacity = 0.7,
-                                           bringToFront = TRUE),
-              popupOptions = popupOptions(style = list("font-weight" = "normal",
-                                                       padding = "3px 8px",
-                                                       "box-shadow" = "3px 3px rgba(0,0,0,0.25)"),
-                                          textsize = "15px",
-                                          direction = "auto")) %>%
-  addLegend(pal = pal,
-            values = states_shape_tweets$Avg.Sentiment,
-            position = "bottomleft",
-            title = "Average Sentiment Score",
-            opacity = 0.7)
+# # Creating a color palette based on the number range in the total column
+# pal <- colorNumeric("YlOrRd", domain=states_shape_tweets$Avg.Sentiment)
+# 
+# # Setting up the pop up text
+# popup_sb <- paste0("State: ", as.character(states_shape_tweets$NAME),"<br/>",
+#                   "Average Sentiment Score: ", as.character(states_shape_tweets$Avg.Sentiment),"<br/>",
+#                   "Total Word Count: ",as.character(states_shape_tweets$WordCounts),"<br/>",
+#                   "Top Words: ",as.character(states_shape_tweets$Terms),"<br/>")
+# 
+# # Mapping it with the new tiles CartoDB.Positron
+# leaflet() %>%
+#   addProviderTiles(providers$CartoDB.Positron) %>%
+#   setView(-98.483330, 38.712046, zoom = 4) %>%
+#   addPolygons(data = states_shape_tweets ,
+#               fillColor = ~pal(states_shape_tweets$Avg.Sentiment),
+#               fillOpacity = 0.7,
+#               weight = 1.5,
+#               opacity = 1,
+#               color = "cornsilk",
+#               dashArray = "3",
+#               smoothFactor = 0.2,
+#               popup = ~popup_sb,
+#               highlight = highlightOptions(weight = 4,
+#                                            color = "#839EA8",
+#                                            dashArray = "",
+#                                            fillOpacity = 0.7,
+#                                            bringToFront = TRUE),
+#               popupOptions = popupOptions(style = list("font-weight" = "normal",
+#                                                        padding = "3px 8px",
+#                                                        "box-shadow" = "3px 3px rgba(0,0,0,0.25)"),
+#                                           textsize = "15px",
+#                                           direction = "auto")) %>%
+#   addLegend(pal = pal,
+#             values = states_shape_tweets$Avg.Sentiment,
+#             position = "bottomleft",
+#             title = "Average Sentiment Score",
+#             opacity = 0.7)
 
 ```
 
@@ -319,13 +323,11 @@ icons <- awesomeIcons(
 
 
 # Map
-map_title2 <- tags$p(tags$style('p {color: gray; font-size: 14px; family: serif}'),
+map_title2 <- tags$p(tags$style('p {color: black; font-size: 14px; family: serif}'),
                     tags$b('#CancelStudentDebt Tweets in the US - Location of Selective Insitutions'))
 
 leaflet() %>%
   setView(-98.483330, 38.712046, zoom = 4) %>% 
-#Base Group
-  addTiles(group = "OSM (default)") %>%
   addTiles('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', 
     attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>', group = "Dark") %>%
 #Overlay Group  
@@ -365,10 +367,10 @@ leaflet() %>%
             pal = ppal, 
             values = states_shape_tweets$Avg.Sentiment, 
             opacity = 0.7) %>% 
-  addLayersControl(baseGroups = c("OSM (default)", "Dark"),
-                   overlayGroups = c('Twitter Sentiments', 'Selective Institutions'),
-                   options = layersControlOptions(collapsed = FALSE), 
-                   position = 'bottomright') %>%
+  addLayersControl( 
+          overlayGroups =c("Twitter Sentiments", "Selective Institutions"),
+          options = layersControlOptions(collapsed=FALSE),
+          position = "bottomright") %>% 
   #Add Map Title
   addControl(map_title2, 
              position = 'topright') %>% 
@@ -384,7 +386,11 @@ leaflet() %>%
 
 ```
 
-
+   Lastly, we want to see if there's an overlap between the states that are most concerned about student loan forgiveness and where the selective schools are located. We added two layers on the map to showcase patterns. The first layer tells us which states are most concerned about student loan forgiveness by setting the radius of the circle to the total tweets word count. The gradient color scale shows the sentiment score of each state where red means a more negative average tweets sentiment and green means a more positive tweet sentiment on average. In addition, the popup window shows the top tweets keywords in each state after getting ride of most frequent keywords such as student, loan, debt, cancelstudentdebt, and amp. In California, not only do people tweet the most about student loan forgiveness, but they also have a more positive sentiment toward student loan forgiveness. Other areas where there are more discussions on student loan forgiveness concentrate along the coastal states. Midwestern states are least concerned about student loan forgiveness, and their tweets sentiment is also more negative. 
+   
+   The second layer shows where the selective institutions are located, where purple icon stands for elite universities, green icon stands for highly selective universities, and blue icon stands for selective universities. Overall, these selective universities are concentrated along the coastlines. On the west coast, most of the selective universities are in California. And the selective universities spread out more evenly on the east coast. Overall, we can see an overlap by looking at the two layers together. States with higher concentration of selective schools are also where people are most concerned about student loan forgiveness 
+   
+# Shiny
 ```{r, echo=FALSE}
 library(rsconnect)
 #rsconnect::deployApp('grace-xuejing-li-visuals')
