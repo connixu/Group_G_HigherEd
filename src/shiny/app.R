@@ -191,7 +191,7 @@ tweets_tidy_wc <- tweets_tidy %>%
  # Create a wordcloud with wesanderson palette
 Twitter_wd <- wordcloud2(tweets_tidy_wc,
                          color = wes_palette(name="Royal2"),
-                         fontFamily = "serif")
+                         fontFamily = "serif") 
 
 ### Figure 3: <#CancelStudentDebt Tweets in the US - Location of Selectice Institutions>
 
