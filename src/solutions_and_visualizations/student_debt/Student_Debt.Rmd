@@ -1,0 +1,458 @@
+---
+title: "Visuals_Draft_04_14"
+author: "Connie Xu"
+date: "4/14/2021"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd/src/visuals/")
+knitr::opts_chunk$set(echo = TRUE)
+source("ourtheme.R")
+```
+
+```{r packages, echo=FALSE, eval=TRUE, warning=FALSE, message=FALSE}
+r = getOption("repos")
+r["CRAN"] = "http://cran.us.r-project.org"
+options(repos = r)
+# install.packages (basic)
+suppressMessages(library(dplyr))
+suppressMessages(library(tidyverse))
+
+# install.packages (reading)
+suppressMessages(library(XML))
+suppressMessages(library(RCurl))
+suppressMessages(library(readr))
+suppressMessages(library("readxl"))
+
+# install.packages (themes)
+suppressMessages(library(ggthemes))
+suppressMessages(library(ggrepel))
+suppressMessages(library(RColorBrewer))
+suppressMessages(library(viridis))
+suppressMessages(library(hrbrthemes))
+suppressMessages(library(plotly))
+
+
+# install.packages (maps)
+suppressMessages(library(RgoogleMaps))
+suppressMessages(library(ggmap))
+suppressMessages(install.packages("maps"))
+suppressMessages(install.packages("tmap")) # install the CRAN version
+suppressMessages(library(tmap))
+suppressMessages(install.packages('rgeos'))
+
+suppressMessages(library(devtools))
+# Let's install the development version from Github. Run
+devtools::install_github("rstudio/leaflet")
+```
+
+```{r import general data, echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE}
+# Set the WD as Group_G_HigherEd 
+setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd")
+
+# While our initial College Scorecard only included 2019 initially, I was able to run a simple python script to concatenate and select a small number of relevant columns for our visualization and analysis. Thus, as our first visualizations only unclude 2019, the code below is for re-filtering the concatenated 2010-2019 data back into simply 2019. 
+
+sc_time <- read.csv('/src/2010_2019_student_debt.csv') 
+sc <- sc_time %>% filter(Year_Ending == 2019)
+sc_time
+library(educationdata)
+# Test Run with using get_education_data 
+# data <- get_education_data(level = "college-university",
+#     source = "ipeds",
+#     topic = "directory",
+#     filters = list(year = 2019))
+# data
+# Scorecard data - 2019 
+
+## change projection of sc data
+sc <- sc %>%
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.2 ~ 'highly selective/elite',
+    ADM_RATE < 0.3 ~ 'more selective',
+    ADM_RATE < 0.5 ~ 'selective',
+    ADM_RATE < 0.7 ~ 'less selective',
+    TRUE ~ 'not selective')) %>% mutate(uni_rank = factor(uni_rank, levels=c('not selective', 'less selective', 'selective', 'more selective', 'highly selective/elite')))
+```
+
+## Simple Scattergram 
+
+First we are going to try to present this pattern for different tiers of universities (admission rate as well as debt)
+```{r, echo=TRUE, eval=TRUE}
+# Remove PrivacySuppressed Records and transform Debt Median into a numeric value - we can also do this on the main sc df
+sc$DEBT_MDN[is.na(sc$DEBT_MDN)] <- 0;
+
+brewer.pal(n=10,"PuBuGn")
+ShortPuBuGn <- c("#D0D1E6","#A6BDDB","#67A9CF","#3690C0","#02818A")
+
+m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+              ggplot(., aes(x=ADM_RATE, y=DEBT_MDN,color=uni_rank)) +
+  geom_point(pch=21) +
+  geom_smooth(color='navy', se = FALSE) +
+  scale_color_manual(values=ShortPuBuGn)+
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background= element_rect(fill="white")) +
+  scale_y_discrete(limits=c(0,10000,20000,30000), labels=c('0','10','20','30')) +
+  labs(x='Admissions Rate', y='Median Loan Amount per Student\n(thousands)', 
+       title='Student Debt and Admissions Rate',
+       color='Selectivity')
+m
+```
+  
+  This plot sets out to show the relationship between median loan amount in 2019 and the admissions rate. The trend shown here is that as the admissions rate goes up (i.e., as schools become less selective), so does median loan amount (at least until we go from less selective to not selective). Based on the scatterplot, it can also be seen that the variance goes up in terms of median student loan amount (although it can also be seen that this is partially due to the much larger number of schools in the less selective buckets).  
+  This is somewhat interesting because more exclusive/selective schools are on average viewed as more 'competitive' and 'prestigious' (e.g., Harvard, Stanford, etc.); a great deal of existent literature has noted that such 'prestigious' schools often end up admitting more people from economically privileged backgrounds (outside of those admitted specifically for diversity), as 'merit-based' admissions often correlate with access to economic and financial resources, which allow for access to resources helpful for competence signalling, such as standardized test prep courses, sports and activities, etc; furthermore, such schools include more financial resources (as more prestigious schools produce alma maters with higher socioeconomic outcomes) and thus potentially can help more with financial aid and scholarships. 
+  
+This is a data table showing the breakdown of the university ranks (as I chose to rank them). I will note that from the dt alone wwe are seeing a downward trend in the 'Median Student Loans' column. 
+```{r, echo=TRUE, eval=TRUE}
+# Create Data Table (Summarized) for 
+library('scales')
+
+sc_dt <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% group_by(uni_rank) %>% mutate(`Number of Universities` = n()) %>% ungroup() %>% mutate(DEBT_MDN_STUDENTS = DEBT_MDN*UGDS) %>% group_by(uni_rank) %>% mutate(`Median Student Loans` = paste('$',round(sum(DEBT_MDN_STUDENTS, na.rm=TRUE)/sum(UGDS, na.rm=TRUE),2))) %>% 
+  mutate(`Min Acceptance Rate` = percent(min(ADM_RATE))) %>% mutate(`Max Acceptance Rate` = percent(max(ADM_RATE))) %>% ungroup() %>% 
+  group_by(uni_rank,`Median Student Loans`,`Number of Universities`,`Min Acceptance Rate`,`Max Acceptance Rate`) %>% 
+  summarize() %>% dplyr::rename(`University Selectivity` = uni_rank)
+
+install.packages('DT')
+library(DT)
+table <- datatable(sc_dt,style = "default",filter = 'top',  caption = 'Universities and Selectivity')
+table
+
+```
+We will examine the relationships between student loans and the 'selectiveness' of the universities in our dataset. Selectiveness (admissions rate) is often a proxy for the prestige/school ranking of a school. This table summarizes how we categorized our admissions rate for 'university selectivity' grouping (from the College Scorecard file). It describes the median student loans and the number of universities in each category as of 2019, as well as the Minimum Acceptance Rate, and the Maximum Acceptance Rate thresholds. 
+
+```{r}
+install.packages('treemap')
+install.packages('highcharter')
+library(highcharter)
+library(treemap)
+
+sc_dt %>% dplyr::mutate(Description=paste(`University Selectivity`, '\n',`Number of Universities`,'Universities'), sep ="\n") %>%
+  treemap(index="Description",
+          vSize="Number of Universities",
+        type="index",
+        fontsize.labels=c(12, 8), 
+        palette =  viridis(5),
+        border.col="white",
+        title = 'Universities and Selectivity')
+```
+
+  The treemap above visualizes and summarizes the selectivity grouping label and university counts within each of the categorical selectivity groupings. As shown above, the vast majority of schools in our dataset were 'not selective' or 'less selective'; however, many of our analyses focus on the smaller categories (particularly selective to highly selective/elite), because these categories have more within-group homogeneity and furthermore are more interesting to our focal questions. 
+
+## Scattergram as Violin Plot
+```{r, echo=TRUE, eval=TRUE}
+m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+  ggplot(., aes(x=uni_rank, y=DEBT_MDN)) +
+  geom_violin(aes(fill=uni_rank,color=uni_rank)) +
+  geom_boxplot(width = 0.2)+
+  scale_fill_manual(values=ShortPuBuGn) +
+  scale_colour_manual(values=ShortPuBuGn) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background= element_rect(fill="white"))+
+  scale_y_discrete(limits=c(0,10000,20000,30000), labels=c('0','10','20','30')) +
+  scale_x_discrete(labels=c('not\nselective\n(>70%)','less\nselective\n(50%-70%)',
+                            'selective\n(30%-50%)','more\nselective\n(20%-30%)','highly\nselective\n(5%-20%)','elite\n(<5%)')) +
+
+  labs(x='Selectivity\n(admission rate thresholds)', y='Median Loan Amount per Student\n(thousands)', 
+       title='Selective Schools and Student Debt',
+       color='',fill='')
+m
+```
+Showing the previous scattergram specifically as violin plots
+
+```{r, echo=TRUE, eval=TRUE}
+ipeds15 <- get_education_data(level = "college-university",
+    source = "ipeds",
+    topic = "grad-rates-pell",
+    filters = list(year = 2015))
+ipeds15
+```
+
+
+## Student Debt over Time
+
+```{r, echo=TRUE, eval=TRUE}
+
+#Process the data 
+sc_time <- read_csv('2010_2019_student_debt.csv') 
+
+sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
+  transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+  dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN))
+
+```
+
+
+```{r, echo=TRUE, eval=TRUE}
+#Process the data 
+setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd")
+sc_time <- read_csv('src/2010_2019_student_debt.csv') 
+sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
+  transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+  dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) %>% 
+  mutate(DEBT_MDN_STUDENT = DEBT_MDN*UGDS)
+sc_time
+
+sum(sc_time$UGDS,na.rm=TRUE)
+```
+
+Below is an interactive line graph (2010-2019) which details the trends in student debt over the years. 
+```{r, echo=TRUE, eval=TRUE}
+# CPI Inflation Rates - Got Average Yearly Inflation Rate for Scaling for Student Debt 
+install.packages('quantmod')
+library(quantmod)
+quantmod::getSymbols("CPIAUCSL", src='FRED')
+avg.cpi <- apply.yearly(CPIAUCSL, mean)
+cf <- as.data.frame(avg.cpi/as.numeric(avg.cpi['2009'])) 
+cf$Year_Ending <- format(as.Date(row.names(cf), format="%Y-%m-%d"),"%Y")
+
+# Merged for Inflation 
+sc_time_df <- sc_time %>% group_by(`Year_Ending`) %>% mutate(`Average Annual Student Debt - National` = sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% ungroup() %>% 
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.2 ~ 'elite/highly selective',
+    ADM_RATE < 0.3 ~ 'more selective',
+    ADM_RATE < 0.5 ~ 'selective',
+    ADM_RATE < 0.7 ~ 'less selective',
+    TRUE ~ 'not selective')) %>%
+  mutate(uni_rank = factor(uni_rank, levels=c('not selective', 'less selective', 'selective', 
+                                              'more selective', 'elite/highly selective'))) %>%
+  group_by(uni_rank,Year_Ending) %>% 
+  mutate(`Average Annual Student Debt (by Selectivity)` = sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  group_by(`Year_Ending`,`Average Annual Student Debt (by Selectivity)`,
+           uni_rank,`Average Annual Student Debt - National`) %>% summarize() %>% 
+  merge(cf) %>% 
+  mutate(`Adjusted Average Annual Student Debt` = `Average Annual Student Debt (by Selectivity)`/
+           CPIAUCSL) %>% 
+  mutate(`Adjusted Average Annual Student Debt - Composite` = `Average Annual Student Debt - National`/
+           CPIAUCSL)
+
+sc_df <- sc_time_df %>% group_by(`Average Annual Student Debt - National`,`Adjusted Average Annual Student Debt - Composite`,Year_Ending) %>% summarize() %>% mutate(uni_rank='national average') %>% mutate(`Adjusted Average Annual Student Debt`=`Adjusted Average Annual Student Debt - Composite`) %>% dplyr::mutate(`Average Annual Student Debt (by Selectivity)` = `Average Annual Student Debt - National`) %>% merge(cf) %>% select(Year_Ending,`Average Annual Student Debt (by Selectivity)`, uni_rank, `Average Annual Student Debt - National`, CPIAUCSL, `Adjusted Average Annual Student Debt`,`Adjusted Average Annual Student Debt - Composite`)
+sc_time_df <- sc_time_df %>% rbind(sc_df) %>% mutate(uni_rank = factor(uni_rank, levels=c('national average','not selective', 'less selective', 'selective', 'more selective', 'elite/highly selective'))) %>% 
+  mutate(`Group Level` = ifelse(uni_rank == 'national average', 'National','Selectivity'))
+sc_df
+sc_time_df
+
+
+p <- sc_time_df %>% 
+  ggplot(.,aes(x=Year_Ending,y=`Adjusted Average Annual Student Debt`, color=uni_rank)) + 
+  geom_line(aes(linetype=`Group Level`)) + 
+  scale_color_manual(values=c('grey',"#D0D1E6","#A6BDDB","#67A9CF","#3690C0","#02818A"))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background= element_rect(fill="white")) +
+  scale_x_continuous(breaks = round(seq(min(sc_time$Year_Ending), max(sc_time$Year_Ending), by = 2),1)) +
+  labs(x='', y='Inflation-Adjusted Median Loan Amount per Student\n(thousands)', 
+       title='Student Debt Has Been Rising Over The Years',
+       color='',fill='',group='',linetype='')
+ggplotly(p)
+
+
+```
+
+  Between 2010 and 2018, the median loan amount per student increased by 2000-4000+ USD (inflation-adjusted) - nationally, the median student loan amount increased by 19%. When one disaggregates universities by selectivity, we see the same *overall* trend over time (i.e., there is a fair amount of increase during the period in terms of average student loans that students leave with upon entering repayment); however, some selectivity groups increased more dramatically than others (e.g., 'More Selective' or schools with 20-30% acceptance rates appeared to increase greatly in terms of student debt principal between 2015 and 2017, but this amount declined a bit again in 2018) and different selectivity groups decreased in median student debt over time (less selective; selective schools seemed to decrease in median debt following 2014).  
+  To look at how median student debt has changed either by only national average or to look at specific 'selectivity' buckets, one can simply click to remove the remaining lines in the plot. 
+
+The following is (instead) a bar graph with fewer 'university selectivity' buckets. 
+```{r}
+sc_time_df <- sc_time %>% group_by(`Year_Ending`) %>% mutate(`Average Annual Student Debt - National` = sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% ungroup() %>% 
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.2 ~ 'highly selective',
+    ADM_RATE < 0.5 ~ 'moderately selective',
+    TRUE ~ 'less/not at all selective')) %>%
+  mutate(uni_rank = factor(uni_rank, levels=c('less/not at all selective', 'moderately selective', 'highly selective'))) %>%
+  group_by(uni_rank,Year_Ending) %>% 
+  mutate(`Average Annual Student Debt (by Selectivity)` = sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  group_by(`Year_Ending`,`Average Annual Student Debt (by Selectivity)`,
+           uni_rank,`Average Annual Student Debt - National`) %>% summarize() %>% 
+  merge(cf) %>% 
+  mutate(`Adjusted Average Annual Student Debt` = `Average Annual Student Debt (by Selectivity)`/
+           CPIAUCSL) %>% 
+  mutate(`Adjusted Average Annual Student Debt - Composite` = `Average Annual Student Debt - National`/
+           CPIAUCSL)
+
+sc_df <- sc_time_df %>% group_by(`Average Annual Student Debt - National`,`Adjusted Average Annual Student Debt - Composite`,Year_Ending) %>% summarize() %>% mutate(uni_rank='national average') %>% mutate(`Adjusted Average Annual Student Debt`=`Adjusted Average Annual Student Debt - Composite`) %>% dplyr::mutate(`Average Annual Student Debt (by Selectivity)` = `Average Annual Student Debt - National`) %>% merge(cf) %>% select(Year_Ending,`Average Annual Student Debt (by Selectivity)`, uni_rank, `Average Annual Student Debt - National`, CPIAUCSL, `Adjusted Average Annual Student Debt`,`Adjusted Average Annual Student Debt - Composite`)
+sc_time_df <- sc_time_df %>% rbind(sc_df) %>% mutate(uni_rank = factor(uni_rank, levels=c('national average','less/not at all selective', 'moderately selective', 'highly selective'))) 
+
+fig1 <- sc_time_df %>% plot_ly(x = ~Year_Ending, y = ~`Adjusted Average Annual Student Debt`, type = 'bar',
+  color = ~uni_rank, alpha=0.8, hovertemplate = 'Average Debt/Student (USD): %{y} <extra></extra>',colors='Purples') %>% 
+  layout(yaxis = list(
+  title = "Average Annual Student Debt per Student\n(Adjusted for Inflation)"))
+
+fig1
+
+```
+
+Chloropleth showing average student debt (this is only 2019 but I have a filter at the beginning that will allow me to incorporate a slider for the year).
+
+```{r Student Debt map - Chloropleth, echo=TRUE, eval=TRUE }
+
+# Additions of States df from Tigris File 
+library(tigris)
+states <- states(cb = TRUE)
+
+# Can change to sc_time_year 
+sc_time_2019 <- sc_time %>% subset(Year_Ending = 2019) %>% 
+  group_by(STABBR) %>% mutate(`Average Student Loans`=sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% group_by(STABBR,`Average Student Loans`) %>% summarize()
+
+# States 
+states_2019 <- states %>% 
+  inner_join(sc_time_2019, by=c(STUSPS='STABBR')) 
+
+
+library(leaflet.providers)
+library(leaflet)
+#used 'success' measures. 
+
+pal = colorFactor('Greens', domain = states_2019$`Average Student Loans`)
+
+pop_pop <- paste("State:",states_2019$NAME,"<br/>",
+                 "Average Student Loans","<br/>",
+                 "of Schools Located in State:",paste('$',round(states_2019$`Average Student Loans`)))
+library(htmlwidgets)
+library(htmltools)
+states_2019_title <- tags$p(tags$style('p{color:gray; font-size: 14px; family: serif}'),
+                            tags$b('Average Debt By State (2019)'))
+
+leaflet(states_2019) %>% addProviderTiles("CartoDB.Positron") %>%
+  addPolygons(fillColor = ~pal(states_2019$`Average Student Loans`),
+              color = "white",
+              weight = 0.5,
+              fillOpacity = 0.7,  
+              highlight = highlightOptions(
+                weight = 5,
+                color = "#666",
+                fillOpacity = 0.7,
+                bringToFront = TRUE,
+                ),popup=pop_pop) %>% addLegend(position = "bottomleft", colors =c("#EDF8E9","#BAE4B3","#74C476","#31A354","#006D2C"), 
+                     labels = c(paste('$',round(min(states_2019$`Average Student Loans`)))," "," "," ", 
+                                paste('$',round(max(states_2019$`Average Student Loans`)))),
+            title = "Average Student Loans (Per Student)") %>%
+  leaflet::setView(-98.5795, 39.8282, zoom=3) %>% addControl(states_2019_title, position='topright')
+?addLegend
+```
+
+```{r}
+brewer.pal(n = 8, name = "RdYlGn")
+```
+
+```{r Student Debt Map - points, echo=TRUE, eval=TRUE }
+# last edit to sc_time_2019 in chunk above for chloropleth
+sc_time_2019_selective <- sc_time_2019 %>% dplyr::rename(lat = LATITUDE) %>% dplyr::rename(long = LONGITUDE) %>% 
+  dplyr::rename(state = STABBR) %>% filter(ADM_RATE < 0.3) %>% 
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.05 ~ 'elite',
+    ADM_RATE < 0.2 ~ 'highly selective',
+    TRUE ~ 'selective'))
+sc_time_2019_selective <- sc_time_2019_selective %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
+  transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+  dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) 
+
+
+
+pal1 = colorFactor(ShortPuBuGn, domain = sc_time_2019_selective$`uni_rank`,reverse=TRUE)
+
+#set popups 
+content <- paste("School",sc_time_2019_selective$INSTNM,"<br/>",
+                 "Number of Undergrads:",sc_time_2019_selective$UGDS,"<br/>",
+                 "Selectivity:", sc_time_2019_selective$uni_rank,"<br/>",
+                 "Median Debt:",paste('$',round(sc_time_2019_selective$DEBT_MDN,2)),"<br/>")
+sc_time_2019_selective
+leaflet(sc_time_2019_selective) %>% addTiles('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png') %>%
+  addCircles(col = ~pal1(sc_time_2019_selective$uni_rank),
+             radius = ~DEBT_MDN,
+             popup = content,
+             fillOpacity = 0.7) %>%
+  leaflet::addLegend(position = "bottomleft",pal = pal1, values = sc_time_2019_selective$uni_rank,
+            title = "Average Student Loans (Per Student)")
+?addLegend
+```
+```{r}
+setwd('~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd/')
+sc_time <- read_csv('src/2010_2019_student_debt.csv') 
+sc_time
+```
+
+
+```{r}
+setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd")
+sc_time <- read_csv('src/2010_2019_student_debt.csv') 
+sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
+  transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+  dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) %>% 
+  mutate(DEBT_MDN_STUDENT = DEBT_MDN*UGDS)
+sc_time
+
+library(reshape2)
+library(shiny)
+ui <- fluidPage(
+  titlePanel("I love Graphs about Student Debt"),
+  # selectInput('year',
+  # 'Year',
+  # choices=c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)), 
+  sliderInput(inputId = "year",
+  label = "Year",
+  value = c(2010,2011,2012,2013,2014,2015,2016,2017,2018,2019)),
+  leafletOutput("studentdebtmap")
+
+)
+
+server <- function(input, output, session){
+  # Render plot of top 10 most popular names
+    sc_time_selective <- reactive({sc_time %>% subset(Year_Ending == input$year) %>% 
+        group_by(STABBR) %>% mutate(`Average Student Loans`=sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>%
+        group_by(STABBR,`Average Student Loans`) %>% summarize()})
+    library(tigris)
+    states <- states(cb = TRUE)
+    states_year <- reactive({states %>% inner_join(sc_time_selective(), by=c(STUSPS='STABBR'))}) 
+    
+  output$studentdebtmap <- renderLeaflet({
+    pal = colorFactor('Greens', domain = states_year()$`Average Student Loans`)
+    pop_pop <- paste("State:",states_year()$NAME,"<br/>",
+                     "Average Student Loans","<br/>", "of Schools Located in State:",
+                     paste('$',round(states_year()$`Average Student Loans`)))
+    
+    sc_time_selective_title <- tags$p(tags$style('p{color:gray; font-size: 14px; family: serif}'),
+                            tags$b('Average Debt By State (2019)'))
+    leaflet(states_year()) %>% addProviderTiles("CartoDB.Positron") %>%
+      addPolygons(fillColor = ~pal(states_year()$`Average Student Loans`),
+                  color = "white",
+                  weight = 0.5,
+                  fillOpacity = 0.7,  
+              highlight = highlightOptions(
+                weight = 5,
+                color = "#666",
+                fillOpacity = 0.7,
+                bringToFront = TRUE,
+                ),popup=pop_pop) %>% addLegend(position = "bottomleft", colors =c("#EDF8E9","#BAE4B3","#74C476","#31A354","#006D2C"), 
+                     labels = c(paste('$',round(min(states_year()$`Average Student Loans`)))," "," "," ", 
+                                paste('$',round(max(states_year()$`Average Student Loans`)))),
+            title = "Average Student Loans (Per Student)") %>%
+  leaflet::setView(-98.5795, 39.8282, zoom=3) %>% addControl(sc_time_selective_title, position='topright')
+    })
+    observe({
+    leafletProxy("studentdebtmap", data = states_year())
+  }) 
+}
+
+shinyApp(ui = ui, server = server)
+
+```
+
+Not all schools have similar amounts of median student debt burden (i.e., upon the beginning of the repayment period). This map summarizes the median debt burden by the state that the school is located in. As shown in this plot, some states (including schools in Pennsylvania, Minnesota, Illinois, etc.) tend to have the highest average median debt burden between the schools within. These states do not necessarily house the most prestigious schools. One of the things we can see when disaggregating this way is that locationally there is a lot of diversity of the student loan burden (on average) given to students by schools when disaggregated at the state level (ranging from 4K to 18K USD in 2019)
+Note that we have also included the shiny interactivity component in which one can select the year on the slider to see the state-level debt median disaggregation across the years; this is not the primary function but instead is a functionality we added to allow individuals to 'explore the data' a bit. 
+
+```{r}
+ui <- fluidPage(
+  titlePanel('The Cost of Higher Education: An Exploration of Student Debt in American Universities')
+  
+)
+ 
+```
+
