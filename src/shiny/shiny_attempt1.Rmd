@@ -83,7 +83,7 @@ ui <- dashboardPage(
                    column(8, wellPanel(plotOutput("repay_rate_dist")))),
           tags$div(
             tags$h1("University Selectivity and Student Debt", align = "center"),
-            tags$h3("University Selectivity")),
+            tags$h2("University Selectivity", align = "center")),
         fluidRow(align = "left",
                  column(7, wellPanel(DTOutput("table"))),
                  column(5, wellPanel(p("We will now examine the relationships between student loans and the 'selectiveness'
@@ -113,6 +113,7 @@ ui <- dashboardPage(
                  schools include more financial resources (as more prestigious schools produce alma maters with higher
                  socioeconomic outcomes) and thus potentially can help more with financial aid and scholarships."))),
                  column(8, wellPanel(plotOutput("admissions_scatter")))),
+        tags$div(tags$h2("Student Debt Over Time", align = "center")),
         fluidRow(align = "left",
                  column(12, wellPanel(plotlyOutput("plotly")))),
         fluidRow(column(4, wellPanel(sliderInput(inputId = "year",
