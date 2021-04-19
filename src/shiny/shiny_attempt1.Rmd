@@ -34,8 +34,9 @@ ui <- dashboardPage(
               fluidPage(
                 tags$div(
                   tags$h1("Project Motivation"),
-                  "Biden's recent loan forgiveness bill has sparked much debate.  And so, we decided to investigate student
-                  repayment rates and student debt over time.  Then, we look at what people are saying and where they are saying it.",
+                  "Biden's recent loan forgiveness bill has sparked much debate.  And so, we decided to investigate
+                  student repayment rates and student debt over time.  Then, we look at what people are saying and where
+                  they are saying it.",
                   tags$h1("Sources"),
                   "For our project, we looked at data from the following sources:
                   (1) Scorecard, (2) Urban Institute Education Data, (3) Twitter API, and (4) Google Trends",
@@ -73,25 +74,46 @@ ui <- dashboardPage(
           tags$div(
             tags$h1("Student Debt")
           )
-        )
-      ),
+        ),
+      #),
       tabItem(tabName = "tweets", class = "active",
-          fluidPage()
+          fluidPage(
+            fluidRow(align = "left",
+                    column(5, plotOutput("trend")),
+                    column(5, plotOutput("wordcloud"))),
+            fluidRow(align = "left",
+                     column(10, p("Grace add description here. And here."))),
+            fluidRow(
+              column(10, leafletOutput("tweetsmap"))))
       )
     )
   )
 )
 
 server <- function(input, output) {
-  library(tidyverse)
+  #library(tidyverse)
+  # arielle ~~~~~~~~~~~~~~~~~~~~~
   output$repay_rate_ave <- renderPlot({
     repay_rate_ave
     
   })
-  
   output$repay_rate_dist <- renderPlot({
     repay_rate_dist
     })
+  # grace ~~~~~~~~~~~~~~~~~~~~~~~
+  
+  output$trend <- renderPlot({
+    Trend
+  })
+  
+  output$wordcloud <- renderPlot({
+    Twitter_wd
+  })
+  
+  output$tweetsmap <- renderLeaflet({
+    TweetsMap
+  })
+  
 }
 
 shinyApp(server = server, ui = ui)
