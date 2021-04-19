@@ -41,11 +41,7 @@ ui <- dashboardPage(
                   "For our project, we looked at data from the following sources:
                   (1) Scorecard, (2) Urban Institute Education Data, (3) Twitter API, and (4) Google Trends",
                   tags$h1("Team Members"),
-                  "Here, we can list a little infor about ourselves",
-                  tags$h3("Arielle Herman"), "Arielle's email address",
-                  tags$h3("Connie Xu"), "Connie's awesome...",
-                  tags$h3("Grace Li"), "Grace is awesome...",
-                  tags$h3("Ariel Luo"), "Ariel is awesome..."
+                  "Arielle Herman, Connie Xu, Grace Li, Ariel Luo"
                 )
               )),
       tabItem(tabName = "loans", class = "active",
@@ -75,7 +71,6 @@ ui <- dashboardPage(
             tags$h1("Student Debt")
           )
         ),
-      #),
       tabItem(tabName = "tweets", class = "active",
           fluidPage(
             fluidRow(align = "left",
@@ -83,8 +78,7 @@ ui <- dashboardPage(
                     column(5, plotOutput("wordcloud"))),
             fluidRow(align = "left",
                      column(10, p("Grace add description here. And here."))),
-            fluidRow(
-              column(10, leafletOutput("tweetsmap"))))
+            fluidRow(column(10, leafletOutput("tweetsmap"))))
       )
     )
   )
