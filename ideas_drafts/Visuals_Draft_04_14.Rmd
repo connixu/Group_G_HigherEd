@@ -120,7 +120,7 @@ table <- datatable(sc_dt,style = "default",filter = 'top',  caption = 'Universit
 table
 
 ```
-This data table summarizes how we categorized our variable for university selectivity grouping (from the College Scorecard file). It describes the median student loans and the number of universities in each category as of 2019, as well as the Minimum Acceptance Rate, and the Maximum Acceptance Rate thresholds. 
+We will examine the relationships between student loans and the 'selectiveness' of the universities in our dataset. Selectiveness (admissions rate) is often a proxy for the prestige/school ranking of a school. This table summarizes how we categorized our admissions rate for 'university selectivity' grouping (from the College Scorecard file). It describes the median student loans and the number of universities in each category as of 2019, as well as the Minimum Acceptance Rate, and the Maximum Acceptance Rate thresholds. 
 
 ```{r}
 install.packages('treemap')
@@ -204,7 +204,7 @@ Below is an interactive line graph (2010-2019) which details the trends in stude
 # CPI Inflation Rates - Got Average Yearly Inflation Rate for Scaling for Student Debt 
 install.packages('quantmod')
 library(quantmod)
-getSymbols("CPIAUCSL", src='FRED')
+quantmod::getSymbols("CPIAUCSL", src='FRED')
 avg.cpi <- apply.yearly(CPIAUCSL, mean)
 cf <- as.data.frame(avg.cpi/as.numeric(avg.cpi['2009'])) 
 cf$Year_Ending <- format(as.Date(row.names(cf), format="%Y-%m-%d"),"%Y")
