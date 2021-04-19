@@ -28,25 +28,73 @@ library(htmlwidgets)
 library(htmltools)
 library(leaflet.extras)
 library(zoo)
-library(wordcloud2)
+library(wordcloud)
 library(wesanderson)
 library(lubridate)
 #install.packages("tigris")
 library(tigris) #for polygon shape file
-# if(!require(magrittr)) install.packages("magrittr")
-# if(!require(dplyr)) install.packages("dplyr")
-# if(!require(ggplot2)) install.packages("ggplot2")
-# if(!require(RColorBrewer)) install.packages("RColorBrewer")
-# if(!require(leaflet)) install.packages("leaflet")
-# if(!require(plotly)) install.packages("plotly")
-# if(!require(shiny)) install.packages("shiny")
-# if(!require(shinyWidgets)) install.packages("shinyWidgets")
-# if(!require(shinydashboard)) install.packages("shinydashboard")
-# if(!require(shinythemes)) install.packages("shinythemes")
-# if(!require(tigris)) install.packages("tigris")
+if(!require(magrittr)) install.packages("magrittr")
+if(!require(dplyr)) install.packages("dplyr")
+if(!require(ggplot2)) install.packages("ggplot2")
+if(!require(RColorBrewer)) install.packages("RColorBrewer")
+if(!require(leaflet)) install.packages("leaflet")
+if(!require(plotly)) install.packages("plotly")
+if(!require(shiny)) install.packages("shiny")
+if(!require(shinyWidgets)) install.packages("shinyWidgets")
+if(!require(shinydashboard)) install.packages("shinydashboard")
+if(!require(shinythemes)) install.packages("shinythemes")
+if(!require(tigris)) install.packages("tigris")
+r["CRAN"] = "http://cran.us.r-project.org"
+options(repos = r)
+library(dplyr)
+library(tidyverse)
+library(XML)
+library(RCurl)
+library(readr)
+library("readxl")
+library(ggthemes)
+library(ggrepel)
+library(RColorBrewer)
+library(viridis)
+library(hrbrthemes)
+library(plotly)
+library(RgoogleMaps)
+library(ggmap)
+install.packages("maps")
+install.packages("tmap") # install the CRAN version
+library(tmap)
+install.packages('rgeos')
+library(devtools)
+install.packages('leaflet')
+library('scales')
+install.packages('DT')
+library(DT)
+install.packages('treemap')
+install.packages('highcharter')
+library(highcharter)
+library(treemap)
+library(leaflet.providers)
+library(leaflet)
+install.packages('quantmod')
+library(quantmod)
 
 ## import data
 load("data/sc_repay.Rdata")
+
+## scorecard debt data - load and some filtering
+sc_time <- read.csv('data/2010_2019_student_debt.csv') 
+sc_time<- sc_time %>% subset(DEBT_MDN !='PrivacySuppressed') %>% 
+  transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% 
+  dplyr::mutate(DEBT_MDN = ifelse(is.na(DEBT_MDN), 0, DEBT_MDN)) %>% 
+  mutate(DEBT_MDN_STUDENT = DEBT_MDN*UGDS)
+sc <- sc_time %>% filter(Year_Ending == 2019)
+sc <- sc %>%
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.2 ~ 'highly selective/elite',
+    ADM_RATE < 0.3 ~ 'more selective',
+    ADM_RATE < 0.5 ~ 'selective',
+    ADM_RATE < 0.7 ~ 'less selective',
+    TRUE ~ 'not selective')) %>% mutate(uni_rank = factor(uni_rank, levels=c('not selective', 'less selective', 'selective', 'more selective', 'highly selective/elite')))
 
 ###Tweets Data
 Tweets_state <- readRDS('data/Geotweets_state_cleaned.RDS') %>%
@@ -120,14 +168,85 @@ repay_rate_dist <- sc_repay %>% filter(years_since_entering_repay == 1) %>%
 
 
 ## Connie: Student Debts
-### Figure 1: <put title here>
-# <put code here>
-### Figure 2: <put title here>
-# <put code here>
-### Figure 3: <put title here>
-# <put code here>
-### Figure 4: <put title here>
-# <put code here>
+### Figure 1: <table_1>
+sc_dt <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% group_by(uni_rank) %>% mutate(`Number of Universities` = n()) %>% ungroup() %>% mutate(DEBT_MDN_STUDENTS = DEBT_MDN*UGDS) %>% group_by(uni_rank) %>% mutate(`Median Student Loans` = paste('$',round(sum(DEBT_MDN_STUDENTS, na.rm=TRUE)/sum(UGDS, na.rm=TRUE),2))) %>%
+  mutate(`Min Acceptance Rate` = percent(min(ADM_RATE))) %>% mutate(`Max Acceptance Rate` = percent(max(ADM_RATE))) %>% ungroup() %>%
+  group_by(uni_rank,`Median Student Loans`,`Number of Universities`,`Min Acceptance Rate`,`Max Acceptance Rate`) %>%
+  summarize() %>% dplyr::rename(`University Selectivity` = uni_rank)
+
+table_1 <- datatable(sc_dt,style = "default",filter = 'top',  caption = 'Universities and Selectivity')
+
+### Figure 2: <treemap>
+treemap <- sc_dt %>% dplyr::mutate(Description=paste(`University Selectivity`, '\n',`Number of Universities`,'Universities'), sep ="\n") %>%
+  treemap(index="Description",
+          vSize="Number of Universities",
+          type="index",
+          fontsize.labels=c(12, 8),
+          palette =  viridis(5),
+          border.col="white",
+          title = 'Universities and Selectivity')
+
+### Figure 3: <admissions_scatter>
+ShortPuBuGn <- c("#D0D1E6","#A6BDDB","#67A9CF","#3690C0","#02818A")
+admissions_scatter <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>%
+  ggplot(., aes(x=ADM_RATE, y=DEBT_MDN,color=uni_rank)) +
+  geom_point(pch=21) +
+  geom_smooth(color='navy', se = FALSE) +
+  scale_color_manual(values=ShortPuBuGn)+
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background= element_rect(fill="white")) +
+  scale_y_discrete(limits=c(0,10000,20000,30000), labels=c('0','10','20','30')) +
+  labs(x='Admissions Rate', y='Median Loan Amount per Student\n(thousands)',
+       title='Student Debt and Admissions Rate',
+       color='Selectivity')
+### Figure 4: <plot_line_plotly>
+  # CPI Inflation Rates - Got Average Yearly Inflation Rate for Scaling for Student Debt 
+quantmod::getSymbols("CPIAUCSL", src='FRED')
+avg.cpi <- apply.yearly(CPIAUCSL, mean)
+cf <- as.data.frame(avg.cpi/as.numeric(avg.cpi['2009'])) 
+cf$Year_Ending <- format(as.Date(row.names(cf), format="%Y-%m-%d"),"%Y")
+  # Merged for Inflation 
+sc_time_df <- sc_time %>% group_by(`Year_Ending`) %>% mutate(`Average Annual Student Debt - National` = sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% ungroup() %>% 
+  dplyr::mutate(uni_rank = case_when(
+    ADM_RATE < 0.2 ~ 'elite/highly selective',
+    ADM_RATE < 0.3 ~ 'more selective',
+    ADM_RATE < 0.5 ~ 'selective',
+    ADM_RATE < 0.7 ~ 'less selective',
+    TRUE ~ 'not selective')) %>%
+  mutate(uni_rank = factor(uni_rank, levels=c('not selective', 'less selective', 'selective', 
+                                              'more selective', 'elite/highly selective'))) %>%
+  group_by(uni_rank,Year_Ending) %>% 
+  mutate(`Average Annual Student Debt (by Selectivity)` = sum(DEBT_MDN_STUDENT,na.rm=TRUE)/sum(UGDS,na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  group_by(`Year_Ending`,`Average Annual Student Debt (by Selectivity)`,
+           uni_rank,`Average Annual Student Debt - National`) %>% summarize() %>% 
+  merge(cf) %>% 
+  mutate(`Adjusted Average Annual Student Debt` = `Average Annual Student Debt (by Selectivity)`/
+           CPIAUCSL) %>% 
+  mutate(`Adjusted Average Annual Student Debt - Composite` = `Average Annual Student Debt - National`/
+           CPIAUCSL)
+#More data manipulation
+sc_df <- sc_time_df %>% group_by(`Average Annual Student Debt - National`,`Adjusted Average Annual Student Debt - Composite`,Year_Ending) %>% summarize() %>% mutate(uni_rank='national average') %>% mutate(`Adjusted Average Annual Student Debt`=`Adjusted Average Annual Student Debt - Composite`) %>% dplyr::mutate(`Average Annual Student Debt (by Selectivity)` = `Average Annual Student Debt - National`) %>% merge(cf) %>% select(Year_Ending,`Average Annual Student Debt (by Selectivity)`, uni_rank, `Average Annual Student Debt - National`, CPIAUCSL, `Adjusted Average Annual Student Debt`,`Adjusted Average Annual Student Debt - Composite`)
+sc_time_df <- sc_time_df %>% rbind(sc_df) %>% mutate(uni_rank = factor(uni_rank, levels=c('national average','not selective', 'less selective', 'selective', 'more selective', 'elite/highly selective'))) %>% 
+  mutate(`Group Level` = ifelse(uni_rank == 'national average', 'National','Selectivity'))
+  #Name of Static Graph 
+plot_line <- sc_time_df %>% 
+  ggplot(.,aes(x=Year_Ending,y=`Adjusted Average Annual Student Debt`, color=uni_rank)) + 
+  geom_line(aes(linetype=`Group Level`)) + 
+  scale_color_manual(values=c('grey',"#D0D1E6","#A6BDDB","#67A9CF","#3690C0","#02818A"))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background= element_rect(fill="white")) +
+  scale_x_continuous(breaks = round(seq(min(sc_time$Year_Ending), max(sc_time$Year_Ending), by = 2),1)) +
+  labs(x='', y='Inflation-Adjusted Median Loan Amount per Student\n(thousands)', 
+       title='Student Debt Has Been Rising Over The Years',
+       color='',fill='',group='',linetype='')
+  #Name of Plotly Graph
+plot_line_plotly <- ggplotly(plot_line)
 ### Figure 5: <put title here>
 # <put code here>
 
@@ -185,13 +304,12 @@ tweets_tidy_wc <- tweets_tidy %>%
   group_by(term) %>%
   summarize(n = sum(count)) %>%
   arrange(desc(n)) %>%
-  filter(! term %in% c("student","loan","debt","cancelstudentdebt","amp","forgiveness","like","can","just","get","will"))%>% 
-  rename(word=term, freq=n)
+  filter(! term %in% c("student","loan","debt","cancelstudentdebt","amp","forgiveness","like","can","just","get","will"))
 
  # Create a wordcloud with wesanderson palette
-Twitter_wd <- wordcloud2(tweets_tidy_wc,
-                         color = wes_palette(name="Royal2"),
-                         fontFamily = "serif")
+Twitter_wd <- wordcloud(tweets_tidy_wc$term, tweets_tidy_wc$n,
+       max.words = 100, colors = wes_palette(name="Royal2"),
+       family = "serif")
 
 ### Figure 3: <#CancelStudentDebt Tweets in the US - Location of Selectice Institutions>
 
