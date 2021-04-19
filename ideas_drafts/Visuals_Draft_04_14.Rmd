@@ -53,9 +53,9 @@ setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_
 
 # While our initial College Scorecard only included 2019 initially, I was able to run a simple python script to concatenate and select a small number of relevant columns for our visualization and analysis. Thus, as our first visualizations only unclude 2019, the code below is for re-filtering the concatenated 2010-2019 data back into simply 2019. 
 
-sc_time <- read_csv('src/2010_2019_student_debt.csv') 
+sc_time <- read.csv('/src/2010_2019_student_debt.csv') 
 sc <- sc_time %>% filter(Year_Ending == 2019)
-
+sc_time
 library(educationdata)
 # Test Run with using get_education_data 
 # data <- get_education_data(level = "college-university",
@@ -100,7 +100,10 @@ m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.n
        color='Selectivity')
 m
 ```
-
+  
+  This plot sets out to show the relationship between median loan amount in 2019 and the admissions rate. The trend shown here is that as the admissions rate goes up (i.e., as schools become less selective), so does median loan amount (at least until we go from less selective to not selective). Based on the scatterplot, it can also be seen that the variance goes up in terms of median student loan amount (although it can also be seen that this is partially due to the much larger number of schools in the less selective buckets).  
+  This is somewhat interesting because more exclusive/selective schools are on average viewed as more 'competitive' and 'prestigious' (e.g., Harvard, Stanford, etc.); a great deal of existent literature has noted that such 'prestigious' schools often end up admitting more people from economically privileged backgrounds (outside of those admitted specifically for diversity), as 'merit-based' admissions often correlate with access to economic and financial resources, which allow for access to resources helpful for competence signalling, such as standardized test prep courses, sports and activities, etc; furthermore, such schools include more financial resources (as more prestigious schools produce alma maters with higher socioeconomic outcomes) and thus potentially can help more with financial aid and scholarships. 
+  
 This is a data table showing the breakdown of the university ranks (as I chose to rank them). I will note that from the dt alone wwe are seeing a downward trend in the 'Median Student Loans' column. 
 ```{r, echo=TRUE, eval=TRUE}
 # Create Data Table (Summarized) for 
@@ -109,7 +112,7 @@ library('scales')
 sc_dt <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.numeric(DEBT_MDN)) %>% group_by(uni_rank) %>% mutate(`Number of Universities` = n()) %>% ungroup() %>% mutate(DEBT_MDN_STUDENTS = DEBT_MDN*UGDS) %>% group_by(uni_rank) %>% mutate(`Median Student Loans` = paste('$',round(sum(DEBT_MDN_STUDENTS, na.rm=TRUE)/sum(UGDS, na.rm=TRUE),2))) %>% 
   mutate(`Min Acceptance Rate` = percent(min(ADM_RATE))) %>% mutate(`Max Acceptance Rate` = percent(max(ADM_RATE))) %>% ungroup() %>% 
   group_by(uni_rank,`Median Student Loans`,`Number of Universities`,`Min Acceptance Rate`,`Max Acceptance Rate`) %>% 
-  summarize()
+  summarize() %>% dplyr::rename(`University Selectivity` = uni_rank)
 
 install.packages('DT')
 library(DT)
@@ -117,14 +120,16 @@ table <- datatable(sc_dt,style = "default",filter = 'top',  caption = 'Universit
 table
 
 ```
+This data table summarizes how we categorized our variable for university selectivity grouping (from the College Scorecard file). It describes the median student loans and the number of universities in each category as of 2019, as well as the Minimum Acceptance Rate, and the Maximum Acceptance Rate thresholds. 
+
 ```{r}
 install.packages('treemap')
 install.packages('highcharter')
 library(highcharter)
 library(treemap)
 
-sc_dt %>% 
-  treemap(index="uni_rank",
+sc_dt %>% dplyr::mutate(Description=paste(`University Selectivity`, '\n',`Number of Universities`,'Universities'), sep ="\n") %>%
+  treemap(index="Description",
           vSize="Number of Universities",
         type="index",
         fontsize.labels=c(12, 8), 
@@ -133,6 +138,7 @@ sc_dt %>%
         title = 'Universities and Selectivity')
 ```
 
+  The treemap above visualizes and summarizes the selectivity grouping label and university counts within each of the categorical selectivity groupings. As shown above, the vast majority of schools in our dataset were 'not selective' or 'less selective'; however, many of our analyses focus on the smaller categories (particularly selective to highly selective/elite), because these categories have more within-group homogeneity and furthermore are more interesting to our focal questions. 
 
 ## Scattergram as Violin Plot
 ```{r, echo=TRUE, eval=TRUE}
@@ -155,7 +161,7 @@ m <- sc %>% subset(DEBT_MDN !='PrivacySuppressed') %>% transform(DEBT_MDN = as.n
        color='',fill='')
 m
 ```
-Showing the previous scattergram specifically as violing plots
+Showing the previous scattergram specifically as violin plots
 
 ```{r, echo=TRUE, eval=TRUE}
 ipeds15 <- get_education_data(level = "college-university",
@@ -226,15 +232,16 @@ sc_time_df <- sc_time %>% group_by(`Year_Ending`) %>% mutate(`Average Annual Stu
 
 sc_df <- sc_time_df %>% group_by(`Average Annual Student Debt - National`,`Adjusted Average Annual Student Debt - Composite`,Year_Ending) %>% summarize() %>% mutate(uni_rank='national average') %>% mutate(`Adjusted Average Annual Student Debt`=`Adjusted Average Annual Student Debt - Composite`) %>% dplyr::mutate(`Average Annual Student Debt (by Selectivity)` = `Average Annual Student Debt - National`) %>% merge(cf) %>% select(Year_Ending,`Average Annual Student Debt (by Selectivity)`, uni_rank, `Average Annual Student Debt - National`, CPIAUCSL, `Adjusted Average Annual Student Debt`,`Adjusted Average Annual Student Debt - Composite`)
 sc_time_df <- sc_time_df %>% rbind(sc_df) %>% mutate(uni_rank = factor(uni_rank, levels=c('national average','not selective', 'less selective', 'selective', 'more selective', 'elite/highly selective'))) %>% 
-  mutate(national = ifelse(uni_rank == 'national average', 'y','n'))
+  mutate(`Group Level` = ifelse(uni_rank == 'national average', 'National','Selectivity'))
 sc_df
 sc_time_df
 
 
 p <- sc_time_df %>% 
-  ggplot(.,aes(x=Year_Ending,y=`Adjusted Average Annual Student Debt`, color=uni_rank, group=national)) + 
-  geom_point() + geom_line(aes(linetype=national)) + 
+  ggplot(.,aes(x=Year_Ending,y=`Adjusted Average Annual Student Debt`, color=uni_rank)) + 
+  geom_line(aes(linetype=`Group Level`)) + 
   scale_color_manual(values=c('grey',"#D0D1E6","#A6BDDB","#67A9CF","#3690C0","#02818A"))+
+  scale_linetype_manual(values=c("solid", "dotted"))+
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -247,6 +254,9 @@ ggplotly(p)
 
 
 ```
+
+  Between 2010 and 2018, the median loan amount per student increased by 2000-4000+ USD (inflation-adjusted) - nationally, the median student loan amount increased by 19%. When one disaggregates universities by selectivity, we see the same *overall* trend over time (i.e., there is a fair amount of increase during the period in terms of average student loans that students leave with upon entering repayment); however, some selectivity groups increased more dramatically than others (e.g., 'More Selective' or schools with 20-30% acceptance rates appeared to increase greatly in terms of student debt principal between 2015 and 2017, but this amount declined a bit again in 2018) and different selectivity groups decreased in median student debt over time (less selective; selective schools seemed to decrease in median debt following 2014).  
+  To look at how median student debt has changed either by only national average or to look at specific 'selectivity' buckets, one can simply click to remove the remaining lines in the plot. 
 
 The following is (instead) a bar graph with fewer 'university selectivity' buckets. 
 ```{r}
@@ -285,7 +295,6 @@ Chloropleth showing average student debt (this is only 2019 but I have a filter 
 
 # Additions of States df from Tigris File 
 library(tigris)
-
 states <- states(cb = TRUE)
 
 # Can change to sc_time_year 
@@ -370,7 +379,7 @@ sc_time <- read_csv('src/2010_2019_student_debt.csv')
 sc_time
 ```
 
-The code chunk below has not been touched and includes Shiny code for later use. 
+
 ```{r}
 setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd")
 sc_time <- read_csv('src/2010_2019_student_debt.csv') 
@@ -435,6 +444,9 @@ server <- function(input, output, session){
 shinyApp(ui = ui, server = server)
 
 ```
+
+Not all schools have similar amounts of median student debt burden (i.e., upon the beginning of the repayment period). This map summarizes the median debt burden by the state that the school is located in. As shown in this plot, some states (including schools in Pennsylvania, Minnesota, Illinois, etc.) tend to have the highest average median debt burden between the schools within. These states do not necessarily house the most prestigious schools. One of the things we can see when disaggregating this way is that locationally there is a lot of diversity of the student loan burden (on average) given to students by schools when disaggregated at the state level (ranging from 4K to 18K USD in 2019)
+Note that we have also included the shiny interactivity component in which one can select the year on the slider to see the state-level debt median disaggregation across the years; this is not the primary function but instead is a functionality we added to allow individuals to 'explore the data' a bit. 
 
 ```{r}
 ui <- fluidPage(
