@@ -49,24 +49,24 @@ ui <- dashboardPage(
           tags$div(
             tags$h1("Repayment Rates")),
           fluidRow(align = "left",
-                   column(7, plotOutput("repay_rate_ave")),
-                   column(3, p("This first figure demonstrates the proportion of students across all University
+                   column(8, wellPanel(plotOutput("repay_rate_ave"))),
+                   column(4, wellPanel(p("This first figure demonstrates the proportion of students across all University
                                fiscal cohorts who successfully make progress on repaying their loans in their
                                first year of repayment.  It highlights a declining average trend across all three income
                                brackets: smaller proportions of successive fiscal cohorts decline their loan
                                balances over time.  While the average fiscal cohort may be having more difficulty in
                                repaying their loans, we can look to the distribution of repayment rates across
                                universities in order to determine whether or not income brackets have been impacted
-                               differently over time.")),
+                               differently over time.")), style='padding:5px;'),
                    br())),
           fluidRow(align = "left",
-                   column(3, p("This density plot demonstrates the distribution of repayment proportions across
+                   column(4, wellPanel(p("This density plot demonstrates the distribution of repayment proportions across
                    universities for the first year of repayment for recent fiscal cohorts.  Each unviersity's fiscal 
                    cohort is then further subdivided by income bracket (such that there can be as many as three 
                    datapoints per university).  This reaffirms the findings in the previous plot, but also indicates
                    that the lowest income bracket has experienced the largest decrease in proportions of students who
-                   make progress on their loans.")),
-                   column(7, plotOutput("repay_rate_dist"))),
+                   make progress on their loans."))),
+                   column(8, wellPanel(plotOutput("repay_rate_dist")))),
           tags$div(
             tags$h1("Student Debt")
           )
@@ -83,7 +83,7 @@ ui <- dashboardPage(
             fluidRow(align = "left",
                      column(10, p("Lastly, we want to see if there's an overlap between the states that are most concerned about student loan forgiveness and where the selective schools are located. We added two layers on the map to showcase patterns. The first layer tells us which states are most concerned about student loan forgiveness by setting the radius of the circle to the total tweets word count. The gradient color scale shows the sentiment score of each state where red means a more negative average tweets sentiment and green means a more positive tweet sentiment on average. In addition, the popup window shows the top tweets keywords in each state after getting ride of most frequent keywords such as student, loan, debt, cancelstudentdebt, and amp. In California, not only do people tweet the most about student loan forgiveness, but they also have a more positive sentiment toward student loan forgiveness. Other areas where there are more discussions on student loan forgiveness concentrate along the coastal states. Midwestern states are least concerned about student loan forgiveness, and their tweets sentiment is also more negative. 
    
-   The second layer shows where the selective institutions are located, where purple icon stands for elite universities, green icon stands for highly selective universities, and blue icon stands for selective universities. Overall, these selective universities are concentrated along the coastlines. On the west coast, most of the selective universities are in California. And the selective universities spread out more evenly on the east coast. Overall, we can see an overlap by looking at the two layers together. States with higher concentration of selective schools are also where people are most concerned about student loan forgiveness " )))),
+   The second layer shows where the selective institutions are located, where purple icon stands for elite universities, green icon stands for highly selective universities, and blue icon stands for selective universities. Overall, these selective universities are concentrated along the coastlines. On the west coast, most of the selective universities are in California. And the selective universities spread out more evenly on the east coast. Overall, we can see an overlap by looking at the two layers together. States with higher concentration of selective schools are also where people are most concerned about student loan forgiveness " ))))
       )
     )
   )
