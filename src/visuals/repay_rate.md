@@ -100,7 +100,7 @@ sc_repay %>%
   ggtitle("Cohort Performance in First Year of Repayment") +
   xlab("\nFiscal Cohort Year") + ylab("Average Proportion of Fiscal Cohort\nto Decline Loan Balance\n") +
   labs(caption = "\n*Fiscal Cohort: group of students who begin repaying their loans in the same year") +
-  scale_color_brewer(name = "Family Income:", palette = "greenScale", direction = -1) +
+  scale_color_brewer(name = "Family Income:", labels = c("High", "Medium", "Low"), palette = "greenScale", direction = -1) +
   scale_y_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
   scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1)) +
   ourtheme
@@ -174,12 +174,16 @@ sc_repay %>% filter(years_since_entering_repay == 1) %>%
   # labels
   ggtitle("Proportion of University Fiscal Cohorts Whose Loan\nBalances Declined in Year One of Repayment\n") +
   ylab("Fiscal Cohort\n") + xlab(NULL) +
-  scale_fill_brewer(name = "Family Income:", labels = c("High", "Middle", "Low"), direction = -1) +
+  scale_fill_brewer(name = "Family Income:", labels = c("High", "Middle", "Low"), palette = "greens", direction = -1) +
   scale_x_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
   scale_x_continuous(labels = scales::percent_format()) +
   guides(fill = guide_legend(reverse = TRUE)) +
   
   ourtheme
+```
+
+```
+## Warning in pal_name(palette, type): Unknown palette greens
 ```
 
 ```
@@ -191,7 +195,7 @@ sc_repay %>% filter(years_since_entering_repay == 1) %>%
 ## Picking joint bandwidth of 0.0254
 ```
 
-![](repay_rate_files/figure-html/repay_rate_dist_draft2_ggridges-1.png)<!-- -->
+![](repay_rate_files/figure-html/repay_rate_dist-1.png)<!-- -->
 
 
 
@@ -228,7 +232,7 @@ sc_repay %>%
 ## Picking joint bandwidth of 0.0293
 ```
 
-![](repay_rate_files/figure-html/repay_rate_dist-1.png)<!-- -->
+![](repay_rate_files/figure-html/repay_rate_dist_draft2_ggridges-1.png)<!-- -->
 
 
 
