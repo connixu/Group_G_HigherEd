@@ -28,22 +28,22 @@ library(htmlwidgets)
 library(htmltools)
 library(leaflet.extras)
 library(zoo)
-library(wordcloud)
+library(wordcloud2)
 library(wesanderson)
 library(lubridate)
 #install.packages("tigris")
 library(tigris) #for polygon shape file
-if(!require(magrittr)) install.packages("magrittr")
-if(!require(dplyr)) install.packages("dplyr")
-if(!require(ggplot2)) install.packages("ggplot2")
-if(!require(RColorBrewer)) install.packages("RColorBrewer")
-if(!require(leaflet)) install.packages("leaflet")
-if(!require(plotly)) install.packages("plotly")
-if(!require(shiny)) install.packages("shiny")
-if(!require(shinyWidgets)) install.packages("shinyWidgets")
-if(!require(shinydashboard)) install.packages("shinydashboard")
-if(!require(shinythemes)) install.packages("shinythemes")
-if(!require(tigris)) install.packages("tigris")
+# if(!require(magrittr)) install.packages("magrittr")
+# if(!require(dplyr)) install.packages("dplyr")
+# if(!require(ggplot2)) install.packages("ggplot2")
+# if(!require(RColorBrewer)) install.packages("RColorBrewer")
+# if(!require(leaflet)) install.packages("leaflet")
+# if(!require(plotly)) install.packages("plotly")
+# if(!require(shiny)) install.packages("shiny")
+# if(!require(shinyWidgets)) install.packages("shinyWidgets")
+# if(!require(shinydashboard)) install.packages("shinydashboard")
+# if(!require(shinythemes)) install.packages("shinythemes")
+# if(!require(tigris)) install.packages("tigris")
 
 ## import data
 load("data/sc_repay.Rdata")
@@ -185,12 +185,13 @@ tweets_tidy_wc <- tweets_tidy %>%
   group_by(term) %>%
   summarize(n = sum(count)) %>%
   arrange(desc(n)) %>%
-  filter(! term %in% c("student","loan","debt","cancelstudentdebt","amp","forgiveness","like","can","just","get","will"))
+  filter(! term %in% c("student","loan","debt","cancelstudentdebt","amp","forgiveness","like","can","just","get","will"))%>% 
+  rename(word=term, freq=n)
 
  # Create a wordcloud with wesanderson palette
-Twitter_wd <- wordcloud(tweets_tidy_wc$term, tweets_tidy_wc$n,
-       max.words = 100, colors = wes_palette(name="Royal2"),
-       family = "serif")
+Twitter_wd <- wordcloud2(tweets_tidy_wc,
+                         color = wes_palette(name="Royal2"),
+                         fontFamily = "serif")
 
 ### Figure 3: <#CancelStudentDebt Tweets in the US - Location of Selectice Institutions>
 
