@@ -129,8 +129,17 @@ We then started trying to look at some trends that could be compiled into our vi
 ## Visuals Development Process 
 This section of our notebook focuses on the information we have chosen to present for our visualizations and how we arrived at our current iterations. 
 
-### Student Debt 
-**Student Debt and School Competitiveness**
+### Student Debt And School Selectivity
+
+Because our project focuses on student debt and socioeconomic status and economic outcomes, one of the first things we looked at focused on student debt for different levels of selective-ness for universities in 2019. Our preliminary graph was strictly exploratory - we categorized schools from the College Scorecard by admissions rate (filtering specifically for 2019), splitting into the following categories:  
+  
+  - Elite (<5% admissions rate)  
+  - Highly Selective (5-20% admissions rate)  
+  - More Selective (20%-30% admissions rate)  
+  - Selective (30-50% admissions rate)  
+  - Less Selective (70%+ admissions rate)  
+  
+These categories were then plotted to show median student debt of each institution. 
 ```{r competitiveness_student_debt, echo=TRUE,eval=TRUE, message=FALSE,warning=FALSE}
 sc_sub <- sc %>% subset(DEBT_MDN != 'PrivacySuppressed') %>% drop_na(uni_rank) %>% drop_na(DEBT_MDN)
 sc_sub$uni_rank_cat = factor(sc_sub$uni_rank, levels=c('elite','highly selective','selective','less selective','not selective'))
@@ -145,24 +154,45 @@ ggplot(sc_sub, aes(x=uni_rank_cat,y=DEBT_MDN)) +
   labs(fill = "Selectivity", y="Student Debt", x = "School Competitiveness")
 
 ```
-This was not a very good visual but I wanted to see whether student debt varied relative to the 'eliteness' and the 'selectiveness' of the school. As can be somewhat seen above, elite schools and highly selective schools appear to potentially exhibit higher student debt on average.  
+  
+This was not a very good visual:  
+  
+  1. The transparency was used to visualize distribution (if there are more schools, the 'debt' point is darker) but does this poorly  
+  2. The y-axis label was ugly, showing a number of grey points and it was unclear as to why this was happening.  
+  
+Despite these large issues, it did indicate that elite schools and highly selective schools appear to  exhibit lower levels of student debt on average. This was an interesting finding, and related to socioeconomic background vs because more selective schools are associated with higher outcomes after school and also often admitted a portion of legacy students and financially well-off students, who were able to receive tutoring for school and to devote time to activities (e.g., sports and leadership positions) that would allow them to more competitively gain entry into such schools.  
+  
+Thus, based on this preliminary visual, we made a number of adjustments:  
+  
+  1. We widened the pool, combining 'elite' and 'highly selective' schools, because the 'elite' category did not have very many schools (5) (and of the elite schools, only Stanford and Harvard were captured within this bucket; however, there were several smaller schools of nursing that happened to have very low acceptance rates). This regrouping was also done to reduce the number of 'selectivity' categories for simpler visualization. 
+  2. To make it easier to understand, we set the color palette by attaining discrete colors from  a continuous ColorBrewer scale (BnBuPu) scale - as the school acceptance rate increases, the color gets closer to light purple (from green for 'elite/highly selective schools).  
+  3. Finally, to show the trend even more clearly, we presented our findings as a scattergram, with the admissions rate on the x axis and the median debt on the y axis, and added a geom_smooth line. 
+
+We also considered showing the distribution as a box / violin plot (see below), however, we concluded that it did not provide enough additional information and did not show the trends we are trying to highlight as clearly as I intended (namely, that elite and highly selective schools generally exhibited lower levels of median student debt). 
+
+```{r warning=F, message=F}
+#setwd("~/Dropbox (Business)/Spring 2021/QMSS 5063 - Data Visualization /Group_G_HigherEd/ideas_drafts/Process Book")
+knitr::include_graphics("Images/Violin_Connie.png")
+```
 
 ### Student Repayment Rates
 
-In order to understand whether or not students are having more trouble with their increasing debts, we wanted to visualize repayment rates over time.  The data for this was very complicated:
-| variable | description |
---------------------------
+In order to understand whether or not students are having more trouble with their increasing debts, we wanted to visualize repayment rates over time.  The data for this was very complicated: 
+
+
+| variable                | description |
+|:----------------------- | ----------- |
 | unitid | unique school identifier |
 | cohort_year | a group of students in a school who began repaying their loans in the same year |
 | years_since_entering_repayment | the year of observation of the cohort since their first year |
 | repay_rate | the proportion of students to make progress on their loans |
 | repay_rate_<low/high/mid>income | same as repay rate, but the denominator is the fraction of students in various income brackets |
 | repay_count | the number of students to make progress their loans (the numerator of repay_rate) |
-| repay_count_<low/high/mid>income | number of students to make progress on their loans by income bracket |
+| repay_count_<low/high/mid>income | number of students to make progress on their loans by income bracket |  
 
-This means that each university has multiple observations for each cohort_year (on each year of their repayment), and the same information as divided by income bracket.  And, this information was presented as either the numerator or the proportion of the all students to enter the repayment phase of their student loans.
-
-Therefore, we wanted to visualize the variation in proportion of students to make progress on their loans over time.  And so, we took the median repayment rate for each cohort year in their first year of repayment and made the below plot:
+This means that each university has multiple observations for each cohort_year (on each year of their repayment), and the same information as divided by income bracket.  And, this information was presented as either the numerator or the proportion of the all students to enter the repayment phase of their student loans.  
+  
+Therefore, we wanted to visualize the variation in proportion of students to make progress on their loans over time.  And so, we took the median repayment rate for each cohort year in their first year of repayment and made the below plot:  
 ```{r warning=F, message=F}
 knitr::include_graphics("../../src/visuals/repay_rate_files/figure-html/repay_rate_ave_draft-1.png")
 ```
@@ -188,14 +218,26 @@ knitr::include_graphics("../../src/visuals/repay_rate_files/figure-html/repay_ra
 
 ### Twitter Sentiment Across States
 
-
    The google trend website gives us data about the time period and the count of total number of searches on Google. Plotting the total number of searches overtime helps us to see changes in people's interest in student loan forgiveness. The pattern clearly shows that people's interest in this topic has spiked in 2021. We hypothesized that this is a result of the Biden administration's recent announcement of a reinterpretation of a federal student loan cancellation program which will result in $1 billion in student loan forgiveness. Ever since this announcement, more people have been pushing for a more progressive policy and asking President Biden to cancel student debt through executive action. There is still a lot of uncertainties around whether a universal student loan forgiveness will be initiated via an executive order or via legislation. 
    
 ```{r warning=F, message=F}
 knitr::include_graphics("../../Twitter/src/visualizations/Twitter_Trend.png")
 ```
+  
+  When looking at the extracted words and associated sentiments, we looked first at some of the most frequent words (and their cntribution to the seniment score of the tweet itself): 
+```{r warning=F, message=F}
+knitr::include_graphics("Images/Tweets_Student_Debt_Ariel.png")
+```
+  
+  We decided that the above bar graph could be better expressed differently (either through a map or through a wordcloud) and tried to do this instead.  
 
-  The wordcloud map shows key words that appeared in the tweets data. The size of the word represents how frequent it appears in tweets. Some of the most noticeable ones include people, president, loans, job, college, pay, biden, education, studentloanforgiveness, etc.
+```{r warning=F, message=F}
+knitr::include_graphics("Images/WordCloud_Ariel.png")
+```
+  
+  Our first wordcloud included the primary words in he hashtag and some frequent words that we did not feel added enough meaning (we are already aware given the selected hashtags that the topic would be student debt for example). We modified our wordcloud by removing these terms. 
+
+  The modified wordcloud map shows key words that appeared in the tweets data. The size of the word represents how frequent it appears in tweets. Some of the most noticeable ones include people, president, loans, job, college, pay, biden, education, studentloanforgiveness, etc.
 
 ```{r warning=F, message=F}
 knitr::include_graphics("../../Twitter/src/visualizations/WordCloud.png")
@@ -206,8 +248,12 @@ Below is the initial choropleth map we wanted to put in our project. It shows th
 ```{r warning=F, message=F}
 knitr::include_graphics("../../Twitter/src/visualizations/choropleth_sentiment.png")
 ```
-
+  
+  We scrapped these in part because the Chloropleth itself (with statewide sentiment score) was once again not very informative as it does not end up adding to our story even about how people generally are feeling. We don't have enough information from this map about how people are feeling in different parts of the country, and it's harder to conceptualize or understand the sentiment score itself (for the viewer) in a salient way. 
+  
 ### Appendix: Trends Explored and Scrapped
+
+#### Student Debt and Racial Composition 
 ```{r debt_race, echo=TRUE,eval=TRUE, message=FALSE,warning=FALSE}
 #dfsub %>% group_by(uni_rank) mutate(density = n()) 
 
@@ -225,7 +271,17 @@ m <- ggplot(sc_sub, aes(x=DEBT_MDN,y=UGDS_BLACK, color = uni_rank_cat)) +
 m
 ```
   
-  We also looked at debt and racial breakdown. As shown here, we did not identify a very clear trend - as such, I left 'race and student debt' alone for the time being as we were attempting to work on scaling down to more specific topics.  
+  We also looked at debt and racial breakdown. As shown here, we did not identify a very clear trend - as such, we left 'race and student debt' alone for the time being as we were attempting to work on scaling down to more specific topics.  
+  
+#### Positive and Negative Words Over Time 
+
+  Finally, we tried to take our tweet data and look at the frequency of the positive and negative words over time. After looking at this information, we noted that it did not add anything to our current information (as again sentiment scores can be abstract, and there were no trends based on sentiment identified); we chose not to include or develop these further.
+  
+```{r warning=F, message=F}
+knitr::include_graphics("Images/Sentiment_Words_Ariel.png")
+knitr::include_graphics("Images/Positive_Words_Ariel.png")
+knitr::include_graphics("Images/Negative_Words_Ariel.png")
+```
 
 ## General Decisions  
   We tried to follow the principles we learned in class throughout our work. Specifically, we tried to show data comparatively, 
