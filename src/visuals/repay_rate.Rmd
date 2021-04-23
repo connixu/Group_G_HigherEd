@@ -76,6 +76,8 @@ sc_repay %>%
 totals <- select(sc_repay, contains("count"))/select(sc_repay, contains("rate"))
 totals <- setNames(totals, gsub("count", "total", colnames(totals)))
 
+pal <- brewer.pal(7, "Greens")[c(7,5, 3)]
+
 sc_repay %>%
   # data wrangle
   cbind(totals) %>% filter(repay_rate > 0,
@@ -95,7 +97,7 @@ sc_repay %>%
   ggtitle("Cohort Performance in First Year of Repayment") +
   xlab("\nFiscal Cohort Year") + ylab("Average Proportion of Fiscal Cohort\nto Decline Loan Balance\n") +
   labs(caption = "\n*Fiscal Cohort: group of students who begin repaying their loans in the same year") +
-  scale_color_brewer(name = "Family Income:", labels = c("High", "Medium", "Low"), palette = "greenScale", direction = -1) +
+  scale_color_manual(name = "Family Income:", labels = c("High", "Medium", "Low"), values = pal) +
   scale_y_continuous(labels = scales::dollar_format(suffix = "%", prefix = "")) +
   scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1)) +
   ourtheme
