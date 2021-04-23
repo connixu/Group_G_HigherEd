@@ -46,14 +46,15 @@ install_phantomjs()
 ```
 
 ```{r, echo=FALSE}
-Tweets_state <- readRDS('./Data/Geotweets_state_cleaned.RDS') %>% 
+Tweets_state <- readRDS('~/Documents/GitHub/DataVisualization/Group_G_HigherEd/src/data/twitter_data/Geotweets_state_cleaned.RDS') %>% 
   mutate(id=row_number())
+
 ```
 
 ```{r, echo=FALSE}
 #source("../../src/visuals/ourtheme.R")
 
-SearchTrend <- read_csv('./Data/SearchTrend.csv', col_names = TRUE, skip = 2) %>% 
+SearchTrend <- read_csv('~/Documents/GitHub/DataVisualization/Group_G_HigherEd/src/data/twitter_data/SearchTrend.csv', col_names = TRUE, skip = 2) %>% 
   rename(Total_Searches = 'student loan forgiveness: (United States)') %>% 
   mutate(Month = zoo::as.yearmon(Month))
 
@@ -74,7 +75,7 @@ png("Twitter_Trend.png") #Saving plot to png
 dev.off()
 ```
 
-The google trend website gives us data about the time and the count of the total number of searches on Google. Plotting the total number of searches overtime helps us to see changes in people's interest in student loan forgiveness. The pattern clearly shows that people's interest in this topic has spiked in 2021. We hypothesized that this is a result of the Biden administration's recent announcement of a reinterpretation of a federal student loan cancellation program which will result in $1 billion in student loan forgiveness. Ever since this announcement, more people have been pushing for a more progressive policy and asking President Biden to cancel student debt through executive action. There is still a lot of uncertainties around whether a universal student loan forgiveness will be initiated via executive order or legislation. 
+The Google trend website gives us data about the time and the count of the total number of searches on Google. Plotting the total number of searches overtime helps us to see changes in people's interest in student loan forgiveness. The pattern clearly shows that people's interest in this topic has spiked in 2021. We hypothesized that this is a result of the Biden administration's recent announcement of a reinterpretation of a federal student loan cancellation program which will result in $1 billion in student loan forgiveness. Ever since this announcement, more people have been pushing for a more progressive policy and asking President Biden to cancel student debt through executive action. There is still a lot of uncertainties around whether a universal student loan forgiveness will be initiated via executive order or legislation. 
 
 #Convert Dataframe to corpus
 ```{r, eval= TRUE, echo=FALSE}
@@ -118,7 +119,8 @@ tweets_tidy_wc <- tweets_tidy %>%
   summarize(n = sum(count)) %>%
   arrange(desc(n)) %>% 
   filter(! term %in% c("student","loan","debt","cancelstudentdebt","amp","forgiveness","like","can","just","get","will")) %>% 
-  rename(word=term, freq=n)
+  rename(word=term, freq=n) %>% 
+  top_n(1000)
 
  # Create a wordcloud with wesanderson palette
 Twitter_wd <- wordcloud2(tweets_tidy_wc,
@@ -137,9 +139,9 @@ State_top_words <- tweets_tidy %>%
   group_by(state, term) %>% 
   summarise(total=sum(count)) %>% 
   arrange(desc(total)) %>% 
-  filter(! term %in% c("student","loan","debt","cancelstudentdebt","amp")) %>% 
+  filter(! term %in% c("student","loan","debt","cancelstudentdebt","amp","can","just","will","like")) %>% 
   group_by(state) %>% 
-  slice_max(order_by = total, n=15) %>% 
+  slice_max(order_by = total, n=10) %>% 
   select(-total) %>% 
   summarise(Terms = list(term))
   
@@ -155,12 +157,13 @@ State_top_words <- tweets_tidy %>%
 bing <- get_sentiments("bing")
 
 # Join text to lexicon
+
 Tweets_bing <- inner_join(tweets_tidy, bing, by = c("term" = "word")) %>%
    # Count by sentiment, index, document
   count(sentiment,index,document, text) %>%
    # Spread sentiments
   spread(sentiment, n, fill = 0) %>%
-  mutate(sentiment = positive-negative) 
+  mutate(sentiment = round(positive-negative,3)) 
 ```
 
 ```{r, eval= TRUE, echo=FALSE, }
@@ -204,7 +207,7 @@ tw_state <- Tweets_sentiment %>%
   mutate(N=n(), T.Sentiment=sum(sentiment), WordCounts = sum(display_text_width)) %>%   #get total number of tweets & sum of sentiment score by state
   select(display_text_width, lon, lat, state, T.Sentiment, N, WordCounts) %>%  #lon & lat are vary within each state.Keep first one. 
   group_by(state, lon, lat) %>% 
-  summarise(Avg.Sentiment=T.Sentiment/N, WordCounts=WordCounts) %>% #calculate average sentiment score by state and keep total word counts by state
+  summarise(Avg.Sentiment=round(T.Sentiment/N, 3), WordCounts=WordCounts) %>% #calculate average sentiment score by state and keep total word counts by state
   ungroup(lon,lat) %>% 
   filter(row_number()==1) %>% 
   mutate(lon=ifelse(state=="new york",-73.935242, lon)) %>%  #change coordinates for New York State
@@ -267,7 +270,7 @@ states_shape_tweets <- geo_join(states, tw_state, "name", "state")
 #Get Locations of Elite/ Selective Schools
 ```{r, echo=FALSE, warning=FALSE}
 
-Schools <- read_csv('~/Documents/GitHub/DataVisualization/Group_G_HigherEd/src/2010_2019_student_debt.csv') %>%
+Schools <- read_csv('~/Documents/GitHub/DataVisualization/Group_G_HigherEd/src/data/cs_student_debt/2010_2019_student_debt.csv') %>%
   select(INSTNM, CITY,LATITUDE, LONGITUDE, ADM_RATE) %>% 
   filter(!is.na(ADM_RATE))
 
@@ -278,6 +281,7 @@ SelSchools <-Schools %>%
     ADM_RATE < 0.3 ~ 'selective',
     ADM_RATE < 0.7 ~ 'less selective',
     TRUE ~ 'not selective')) %>% 
+  
   filter(Selectivity %in% c('elite', 'highly selective','selective'), !is.na(LONGITUDE)) %>% 
   distinct(INSTNM, .keep_all=TRUE) 
 ```
@@ -363,7 +367,7 @@ leaflet() %>%
              color=~ppal(states_shape_tweets$Avg.Sentiment), 
              stroke = TRUE, 
              group = 'Twitter Sentiments',
-             fillOpacity = 1) %>% 
+             fillOpacity = 0.8) %>% 
   addLegend(position = "bottomleft",
             title = "Average Sentiment Score", 
             pal = ppal, 
@@ -376,7 +380,7 @@ leaflet() %>%
   #Add Map Title
   addControl(map_title2, 
              position = 'topright') %>% 
-  addResetMapButton() #%>%
+  addResetMapButton() %>%
   #Add Search 
   # addSearchFeatures(
   #   targetGroups = "Selective Institutions",
@@ -384,13 +388,15 @@ leaflet() %>%
   #     propertyName = "INSTNM", zoom = 18, openPopup = TRUE, firstTipSubmit = TRUE,
   #     autoCollapse = TRUE, hideMarkerOnCollapse = TRUE )) %>%
   # addControl("<P>Search for Universities<br/>in US by name.</P>",
-  #            position = "bottomleft")
+  #            position = "bottomleft")   
+  addPolylines(data = states_shape_tweets, color = "lightgrey", opacity = 0.2, weight = 2)
 
 ```
 
-   Lastly, we want to see if there's an overlap between the states that are most concerned about student loan forgiveness and where the selective schools are located. We added two layers on the map to showcase patterns. The first layer tells us which states are most concerned about student loan forgiveness by setting the radius of the circle to the total tweets word count. The gradient color scale shows the sentiment score of each state where red means a more negative average tweet sentiment and green means a more positive tweet sentiment on average. In addition, the popup window shows the top tweets keywords in each state after getting rid of the most frequent keywords such as student, loan, debt, Cancelstudentdebt, and amp. In California, not only do people tweet the most about student loan forgiveness, but they also have a more positive sentiment toward student loan forgiveness. Other areas where there are more discussions on student loan forgiveness concentrate along with the coastal states. Midwestern states are least concerned about student loan forgiveness, and the sentiment of their tweets is also more negative. 
    
-   The second layer shows where the selective institutions are located, where the purple icon stands for elite universities, the green icon stands for highly selective universities, and the blue icon stands for selective universities. Overall, these selective universities are concentrated along the coastlines. On the west coast, most of the selective universities are in California. And the selective universities spread out more evenly on the east coast. Overall, we can see an overlap by looking at the two layers together. States with a higher concentration of selective schools are also where people are most concerned about student loan forgiveness 
+   Lastly, we want to see if there's an overlap between the states where student loan forgiveness is more discussed and the locations of the selective schools. We added two layers on the map to showcase patterns. The first layer tells us which states are most concerned about student loan forgiveness. The larger the circle, the higher the number of total tweets word count. The gradient color scale shows the sentiment score of each state, where red means a more negative average tweet sentiment and green means a more positive tweet sentiment on average. In addition, the popup window shows the top tweet keywords in each state after we got rid of the most frequent keywords such as student, loan, debt, Cancelstudentdebt, and amp. People tweet the most about student loan forgiveness in California. Other areas where there are more discussions on student loan forgiveness are states along the coastlines. Midwestern states are least concerned about student loan forgiveness.
+   
+   The second layer shows where the selective institutions are. Elite universities are in purple, highly selective universities are in green, and the blue markers are selective universities. Overall, these selective universities concentrate along the coastlines. On the west coast, most of the selective universities are in California. The selective universities spread out more evenly on the east coast. Overall, we can see an overlap by looking at the two layers together. States with a higher concentration of selective schools are also where student loan forgiveness is the most discussed. 
    
 # Shiny
 ```{r, echo=FALSE}
