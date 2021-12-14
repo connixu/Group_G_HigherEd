@@ -1,5 +1,5 @@
 
-# Group Project - Group_G_HigherEd
+## Group Project - Group_G_HigherEd (Comprehensive Code and Underlying Files)
 
 Term: Spring 2021
 
